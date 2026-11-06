@@ -194,3 +194,118 @@ th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* =====================================================================
+   3D-verden og gamification
+   ===================================================================== */
+:root { --strip: 150px; --glass: rgba(255, 253, 247, 0.92); }
+#world { position: fixed; inset: 0; z-index: 0; display: none; background: #cfe9ff; }
+body.world-on #world { display: block; }
+#world canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; outline: none; }
+#world-labels { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+body:not(.world-on) #world-labels { display: none; }
+#app { position: relative; z-index: 2; }
+
+/* Skærme hvor verdenen fylder hele baggrunden: kun HUD-elementer fanger tryk, resten går videre til 3D */
+body.world-on.screen-home #app,
+body.world-on.screen-start #app,
+body.world-on.screen-summary #app,
+body.world-on.screen-shop #app { pointer-events: none; }
+body.world-on.screen-home #app button, body.world-on.screen-home #app .hud-card,
+body.world-on.screen-start #app .card-soft, body.world-on.screen-start #app .notice,
+body.world-on.screen-summary #app .card-soft,
+body.world-on.screen-shop #app .hud-chip, body.world-on.screen-shop #app .card-soft { pointer-events: auto; }
+body.busy * { cursor: progress !important; }
+body.busy.world-on #app { opacity: 0.35; transition: opacity 0.3s; }
+
+/* Missionsstribe: lille og rolig, så den ikke forstyrrer læsningen */
+body.world-on.screen-mission #world { height: var(--strip); bottom: auto; border-bottom: 4px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+body.world-on.screen-mission #app { padding-top: calc(var(--strip) + 10px); }
+body.world-on.screen-mission .task { min-height: calc(100vh - var(--strip) - 30px); }
+
+.small-text { font-size: 0.8em; }
+.grow { flex: 1; min-width: 0; }
+.row.tight { gap: 6px; }
+.center-row { justify-content: center; }
+.card-soft { background: var(--glass); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+/* HUD */
+.hud { display: flex; flex-direction: column; min-height: calc(100vh - 32px); }
+.hud-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.hud-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 16px; border-radius: 999px; background: var(--glass); box-shadow: var(--shadow); font-weight: 700; }
+.hud-chip .av { font-size: 1.5em; line-height: 1; }
+.hud-cards { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.hud-cards.static { margin: 12px 0; }
+.hud-card { display: flex; align-items: center; gap: 12px; background: var(--glass); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 16px; flex: 1 1 240px; max-width: 420px; }
+.hud-cards.static .hud-card { max-width: none; }
+.dragon-card .big { font-size: 2.4em; line-height: 1; }
+.dragon-card:not(.compact) .big { font-size: 3.4em; }
+.goal-card .chest { font-size: 2em; line-height: 1; }
+.goal-card .chest:not(.open) { animation: wiggle 2.4s infinite; }
+.goal-dots { display: flex; align-items: center; gap: 6px; }
+.goal-dots i { width: 16px; height: 16px; border-radius: 50%; background: var(--bg-2); border: 2px solid var(--line); }
+.goal-dots i.on { background: var(--star); border-color: var(--star); }
+.hud-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 6px; }
+.hud-bottom .btn.primary { box-shadow: 0 8px 24px rgba(43, 179, 192, 0.45); }
+.hud-hint { margin: 0; font-size: 0.8em; color: var(--ink); background: var(--glass); padding: 2px 12px; border-radius: 999px; }
+@keyframes wiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-12deg); } 90% { transform: rotate(10deg); } 95% { transform: rotate(-6deg); } }
+
+/* Etiketter over øerne */
+.world-label { position: absolute; left: 0; top: 0; pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 16px; background: var(--glass); box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-bottom: 4px solid var(--c); font-family: var(--font); font-size: 15px; letter-spacing: 0.02em; color: var(--ink); white-space: nowrap; will-change: transform; }
+.world-label .wl-icon { font-size: 1.5em; line-height: 1; }
+.world-label .wl-text { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.world-label .wl-name { font-weight: 700; }
+.world-label .wl-stars { color: var(--star); font-size: 0.85em; letter-spacing: 0.08em; }
+.world-label .wl-tag { position: absolute; top: -12px; right: -6px; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--bad-bg); color: var(--bad); }
+.world-label .wl-tag.good { background: var(--ok-bg); color: var(--ok); }
+.world-label.focus { animation: bob 1.6s ease-in-out infinite; }
+.world-label.locked { opacity: 0.75; filter: grayscale(0.6); }
+@keyframes bob { 0%, 100% { margin-top: 0; } 50% { margin-top: -6px; } }
+
+/* Start */
+.start-wrap { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-top: 10px; }
+.start-wrap .hero { padding: 18px; }
+.start-wrap .hero h1 { font-size: 2.2em; margin: 0; }
+body.world-on .start-wrap { padding-top: 26vh; }
+
+/* Combo */
+.combo { display: inline-flex; align-items: center; font-weight: 800; color: #b26b00; background: #fff3d6; border-radius: 999px; padding: 2px 10px; animation: pop 0.35s ease-out; }
+@keyframes pop { from { transform: scale(0.6); } to { transform: scale(1); } }
+
+/* Opsummering */
+body.world-on .summary { padding-top: 30vh; }
+.summary-card { max-width: 640px; margin: 0 auto; }
+.summary-card h1 { margin-bottom: 0.2em; }
+.reward { background: #fff6dc; border-radius: 14px; padding: 8px 14px; margin: 8px 0; font-weight: 600; }
+.reward.soft { background: var(--bg-2); font-weight: 400; }
+.reward.big-reward { background: linear-gradient(90deg, #ffe7a3, #ffd1ec); font-size: 1.15em; animation: pop 0.5s ease-out; }
+
+/* Dragehulen */
+.shop { display: flex; flex-direction: column; gap: 12px; min-height: calc(100vh - 32px); }
+body.world-on .shop-panel { margin-top: auto; }
+.shop-panel { max-height: 58vh; overflow-y: auto; }
+.shop-preview { display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 1.6em; }
+.shop-preview .big { font-size: 2.6em; }
+.swatch { width: 36px; height: 36px; border-radius: 50%; display: inline-block; border: 3px solid #fff; box-shadow: var(--shadow); }
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tab { flex: 1; min-height: 50px; border-radius: 999px; background: var(--bg-2); font-weight: 700; }
+.tab.on { background: var(--accent); color: #fff; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.shop-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border-radius: 18px; background: #fff; border: 3px solid var(--line); }
+.shop-item.on { border-color: var(--ok); background: var(--ok-bg); }
+.shop-item.poor { opacity: 0.6; }
+.si-icon { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2em; }
+.si-name { font-size: 0.95em; text-align: center; }
+.si-status { font-size: 0.85em; color: var(--ink-soft); font-weight: 700; }
+
+@media (max-width: 600px) {
+  :root { --strip: 120px; }
+  .world-label { font-size: 13px; padding: 4px 10px 4px 6px; }
+  .world-label .wl-stars { display: none; }
+  .hud-card { flex-basis: 100%; padding: 8px 12px; }
+  .hide-narrow { display: none; }
+  body.world-on .start-wrap { padding-top: 16vh; }
+  body.world-on .summary { padding-top: 22vh; }
+}
+.hud-chip { white-space: nowrap; }
+@media (max-width: 600px) { .hud-chip { min-height: 44px; padding: 4px 12px; font-size: 0.9em; } }

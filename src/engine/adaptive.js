@@ -28,7 +28,13 @@ export function createProfile(name, avatar = '🐉', now = Date.now()) {
     name,
     avatar,
     createdAt: now,
-    stars: 0,
+    stars: 0,         // livstids-stjerner (dragen vokser)
+    wallet: 0,        // stjerner der kan bruges i dragebutikken
+    owned: ['color-green', 'hat-none', 'trail-none'],
+    equipped: { color: 'color-green', hat: 'hat-none', trail: 'trail-none' },
+    streak: { current: 0, best: 0, lastDay: null },
+    daily: { day: null, missions: 0, claimed: false },
+    comboBest: 0,
     badges: [],
     skills: {},       // pr. kategori
     items: {},        // Leitner-bokse pr. brik ("bogstav:b", "vokal:ø", "klynge:bl", "ord:det")
@@ -37,7 +43,7 @@ export function createProfile(name, avatar = '🐉', now = Date.now()) {
     sessions: [],     // afsluttede missioner
     missionsPlayed: 0,
     unlockAll: false,
-    settings: { autoRead: true, wideSpacing: true, bigText: false, uppercase: false, rate: 0.9, sounds: true },
+    settings: { autoRead: true, wideSpacing: true, bigText: false, uppercase: false, rate: 0.9, sounds: true, world3d: true },
   };
 }
 
@@ -182,6 +188,7 @@ export function recordResult(profile, task, { score, ms = 0, now = Date.now() })
 
   out.starsEarned = score >= 1 ? 2 : score > 0 ? 1 : 0;
   profile.stars += out.starsEarned;
+  profile.wallet = (profile.wallet ?? 0) + out.starsEarned;
   out.newBadges = checkBadges(profile);
   return out;
 }
@@ -189,6 +196,7 @@ export function recordResult(profile, task, { score, ms = 0, now = Date.now() })
 export function finishMission(profile, summary, now = Date.now()) {
   profile.missionsPlayed++;
   profile.stars += summary.bonus || 0;
+  profile.wallet = (profile.wallet ?? 0) + (summary.bonus || 0);
   profile.sessions.push({ ...summary, ts: now });
   if (profile.sessions.length > 200) profile.sessions.shift();
   return checkBadges(profile);
@@ -201,6 +209,7 @@ export function checkBadges(profile) {
   if (profile.missionsPlayed >= 10) add('missions-10');
   if (profile.missionsPlayed >= 50) add('missions-50');
   for (const m of STAR_MILESTONES) if (profile.stars >= m) add(`stars-${m}`);
+  if (dragonStage(profile.stars).index >= 5) add('evolve-5');
   for (const c of CATEGORIES) {
     const s = profile.skills[c.id];
     if (!s) continue;
@@ -219,6 +228,12 @@ export const BADGES = {
   'stars-250': { icon: '💫', name: '250 stjerner' },
   'stars-500': { icon: '🌠', name: '500 stjerner' },
   'stars-1000': { icon: '🪐', name: '1000 stjerner' },
+  'perfect-mission': { icon: '💎', name: 'Perfekt mission' },
+  'streak-3': { icon: '🔥', name: '3 dage i træk' },
+  'streak-7': { icon: '🌋', name: '7 dage i træk' },
+  'streak-30': { icon: '☄️', name: '30 dage i træk' },
+  'combo-10': { icon: '⚡', name: '10 rigtige i træk' },
+  'evolve-5': { icon: '🐉', name: 'Stjernedrage' },
 };
 export function badgeInfo(id) {
   if (BADGES[id]) return BADGES[id];
@@ -239,10 +254,10 @@ export function dragonStage(stars) {
     { min: 350, icon: '🐉', name: 'Stor drage' },
     { min: 700, icon: '🐉✨', name: 'Stjernedrage' },
   ];
-  let cur = stages[0];
-  for (const s of stages) if (stars >= s.min) cur = s;
-  const next = stages.find((s) => s.min > stars) || null;
-  return { ...cur, next };
+  let index = 0;
+  stages.forEach((s, i) => { if (stars >= s.min) index = i; });
+  const next = stages[index + 1] || null;
+  return { ...stages[index], index, next };
 }
 
 // ---------- Analyse til forældreoverblik ----------

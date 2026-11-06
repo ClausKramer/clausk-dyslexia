@@ -26,7 +26,8 @@ stemme som standard. Alle data gemmes lokalt i browseren (ingen konto, ingen ser
 
 ## Spiluniverset
 
-Barnet er på Lydøen med en drage, der vokser af stjerner. Øen har ni steder – ét pr. færdighedsområde:
+Barnet er på Lydøen med en drage, der vokser af stjerner. Verden er i 3D (Three.js): ni svævende øer kredser om
+hjemmeøen, og dragen flyver rundt mellem dem. Hver ø er ét færdighedsområde:
 
 | Sted | Færdighed | Opgaver |
 | --- | --- | --- |
@@ -41,7 +42,31 @@ Barnet er på Lydøen med en drage, der vokser af stjerner. Øen har ni steder �
 | 🗼 Læsefyret | Sætningslæsning og forståelse | Læs sætning → find billede; ja/nej-spørgsmål |
 
 Stederne åbnes gradvist, når forudsætningerne er på plads (kan slås fra under "Voksen").
-Knappen **Spil!** lader motoren vælge en blandet mission på 8 opgaver; barnet kan også vælge et sted selv.
+Knappen **Spil!** lader motoren vælge en blandet mission på 8 opgaver; barnet kan også trykke på en ø.
+
+### 3D-verdenen (`src/world/`)
+
+* **Hjem:** øerne svæver over et levende hav, låste øer er skjult i skyer, og barnet kan dreje og zoome med fingeren.
+  Øerne **vokser** med fremskridtet (blomster, træer, svampe og til sidst en lysende krystal), og flag viser niveauet.
+  Den ø, der driller mest, får en gul ring og mærket "øv her"; den stærkeste får "stærk".
+* **Flyvning:** trykker barnet på en ø, flyver dragen derhen, før missionen starter.
+* **Mission:** en smal, rolig stribe øverst viser dragen, der flyver mod øen ét stykke pr. opgave og samler en stjerne
+  for hvert rigtigt svar (rulle-trick ved rigtigt, loop og regnbue ved niveauskift). Selve opgaven har fuld ro under striben.
+* **Fejring:** fyrværkeri, dragen cirkler om øen, og øer der er vokset, pulserer. Når dragen når et nyt trin, ses en
+  evolution (æg → udklækket → lille drage → drage → stor drage → stjernedrage).
+* **Dragehulen (butik):** stjerner kan bruges på farver, hatte og spor (stjernestøv, ild, is, regnbue); dragen vises
+  tæt på i reden. Brugte stjerner tæller stadig med til dragens vækst.
+* Dragen og øerne er bygget af simple former i kode – ingen 3D-filer. Three.js ligger i `vendor/three/` (MIT).
+* Uden WebGL, med "3D-verden" slået fra under Voksen, eller med `?2d` i adressen bruges en enkel 2D-udgave.
+
+### Gamification (`src/engine/rewards.js`)
+
+* **Stjerner** for hvert svar (2 for rigtigt, 1 med hjælp) + bonus pr. mission.
+* **Dagens mål:** 2 missioner om dagen åbner en skattekiste (+10 ⭐).
+* **Stribe:** 🔥 dage i træk. En brudt stribe nævnes ikke; bedste stribe gemmes.
+* **Perfekt mission** (alt rigtigt i første forsøg) giver +5 ⭐ og et mærke; **combo** viser rigtige i træk.
+* **Mærker** for missioner, stjerner, mestring, niveau 3, striber, combo og stjernedragen.
+* Intet belønnes for hastighed, og intet kan tabes.
 
 Alle instruktioner læses højt, alle svar er billeder eller knapper, så barnet aldrig er afhængig af at kunne
 læse menuer. Forkerte svar straffes ikke: første gang "prøv igen", anden gang vises det rigtige svar, og barnet
@@ -76,6 +101,9 @@ talehastighed, lås alt op) og backup/import som JSON.
 ```
 index.html, styles.css        – app-skal og dysleksivenlig typografi
 src/main.js                   – skærme og spilflow
+src/world/                    – 3D-verden: scene, drage, øer, partikler (Three.js)
+src/engine/rewards.js         – stribe, dagens mål, butik, øernes vækst
+vendor/three/                 – Three.js 0.184 (MIT), så spillet ikke afhænger af et CDN
 src/engine/adaptive.js        – mestring, niveauer, vægtning, Leitner, analyse
 src/tasks/index.js            – opgavegeneratorer (én pr. område)
 src/content/                  – ord (med lydbrikker og emoji), småord, sætninger, kategorier, lyde
@@ -96,7 +124,8 @@ docs/forskning.md             – forskningsgrundlag og designvalg
 
 * Indspil rigtige bogstavlyde (forælder eller lærer) i stedet for talesyntesens tilnærmelser.
 * Flere opgavetyper: skriv ordet med tastatur, læs højt med mikrofon (talegenkendelse), længere tekster.
-* Rigtige illustrationer i stedet for emoji.
+* Rigtige illustrationer i stedet for emoji i opgaverne.
+* Flere ting at bygge på øerne for stjerner (huse, broer mellem øer), og en "dagbog" der viser øernes vækst over tid.
 * Synkronisering mellem enheder (p.t. kun lokal lagring + manuel backup).
 
 ## Deploy til Azure
