@@ -98,3 +98,50 @@ docs/forskning.md             – forskningsgrundlag og designvalg
 * Flere opgavetyper: skriv ordet med tastatur, læs højt med mikrofon (talegenkendelse), længere tekster.
 * Rigtige illustrationer i stedet for emoji.
 * Synkronisering mellem enheder (p.t. kun lokal lagring + manuel backup).
+
+## Deploy til Azure
+
+Spillet hostes som en **Azure Static Web App** (gratis SKU) i ressourcegruppen `rg-clausk-dyslexia`.
+Infrastrukturen ligger som Bicep i `infra/`, og GitHub Actions deployer automatisk ved push til `main`.
+
+```
+infra/main.bicep              – Static Web App (+ valgfrit brugerdefineret domæne)
+infra/main.bicepparam         – navn, region (westeurope) og SKU
+staticwebapp.config.json      – headers og fallback for Static Web Apps
+scripts/build.js              – samler de filer, der skal online, i dist/
+scripts/azure-setup.sh        – engangsopsætning af OIDC-login for GitHub Actions
+scripts/deploy.sh             – manuelt deploy fra egen maskine
+.github/workflows/deploy.yml  – tests → Bicep → upload
+```
+
+### 1. Engangsopsætning (kør én gang fra din maskine)
+
+Kræver [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) og at ressourcegruppen findes.
+
+```bash
+az login
+./scripts/azure-setup.sh
+```
+
+Scriptet opretter en managed identity med Contributor på ressourcegruppen og en federated credential, så GitHub
+Actions kan logge ind uden gemte nøgler (OIDC). Det udskriver tre værdier, som skal ind som secrets i repoet
+(Settings → Secrets and variables → Actions): `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` og `AZURE_SUBSCRIPTION_ID`.
+Hvis `gh` CLI er logget ind, sætter scriptet dem selv.
+
+### 2. Deploy
+
+* **Automatisk:** push til `main` (eller kør workflowen "Deploy til Azure" manuelt under Actions). Workflowen
+  kører testene, deployer Bicep (idempotent), henter Static Web App'ens deployment-token og uploader `dist/`.
+  Adressen står i workflow-loggen og under Environments → production.
+* **Manuelt:** `./scripts/deploy.sh` gør det samme fra din egen maskine.
+
+Kun Bicep uden upload:
+
+```bash
+az deployment group create -g rg-clausk-dyslexia -f infra/main.bicep -p infra/main.bicepparam
+```
+
+### Eget domæne
+
+Sæt `customDomain` i `infra/main.bicepparam` (fx `lydoen.dit-domæne.dk`) og opret en CNAME-post hos
+DNS-udbyderen, der peger på standard-hostnavnet (`<navn>.azurestaticapps.net`), før du deployer igen.
