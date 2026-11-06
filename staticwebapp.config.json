@@ -1,7 +1,7 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/src/*", "/styles.css"]
+    "exclude": ["/src/*", "/vendor/*", "/styles.css"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",

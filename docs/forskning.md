@@ -61,7 +61,28 @@ hvid, og tekst, der kan læses højt.
 | Dysleksivenlig typografi | Lexend/Verdana, 20–24 px, bred bogstavafstand (kan slås fra), linjeafstand 1,6, cremet baggrund, store trykflader |
 | Forældre skal kunne handle | Voksenzone med status pr. område, forvekslinger, konkrete tips pr. område, manuel niveaujustering |
 
-## 3. Kendte begrænsninger
+## 3. Gamification og visualisering
+
+Spil-elementer kan øge motivation og engagement i læring, men effekten afhænger af designet (Hamari, Koivisto &
+Sarsa 2014; Sailer & Homner 2020). Selvbestemmelsesteorien peger på tre behov, der bør understøttes: oplevet
+kompetence, autonomi og tilhørsforhold (Deci & Ryan 2000). For ordblinde børn, der ofte har mange nederlag med
+læsning bag sig, er oplevet kompetence særlig vigtig.
+
+| Princip | Sådan i Lydøen |
+| --- | --- |
+| Synlig kompetence og fremgang | Øerne vokser med mestring og niveau; dragen udvikler sig i seks trin; flag viser niveauet |
+| Autonomi | Barnet vælger selv ø eller lader dragen vælge; barnet bestemmer dragens udseende i dragehulen |
+| Belønning for indsats, ikke hastighed | Stjerner gives for rigtige svar og for at fuldføre; der er ingen tidtagning eller nedtælling |
+| Ingen tab eller skam | Stjerner kan ikke mistes; en brudt stribe nævnes ikke; "øv her" er en invitation, ikke en advarsel |
+| Små, regelmæssige mål | Dagens mål (2 korte missioner) med skattekiste – understøtter korte, hyppige sessioner |
+| Rolig læseflade | 3D-verdenen er en smal stribe under opgaverne; tekst står altid på rolige, uigennemsigtige flader. Visuel uro kan forstyrre læsning hos børn med ordblindhed (jf. forskning i visuel trængsel, fx Zorzi m.fl. 2012) |
+| Tilgængelighed | Respekterer "reducer bevægelse"; 3D kan slås fra; fuld 2D-udgave uden WebGL |
+
+Belønninger kan i nogle tilfælde fortrænge indre motivation (Deci, Koestner & Ryan 1999). Derfor er belønningerne
+knyttet til fremgang og kosmetiske valg frem for at være målet i sig selv, og forældreoverblikket fokuserer på
+læring, ikke stjerner.
+
+## 4. Kendte begrænsninger
 
 * Talesyntese udtaler lukkelyde (b, d, g, k, p, t) som bogstavnavne. Indspillede lyde ville være bedre.
 * Lydbrikkerne følger stavningen (grafemer), ikke en præcis fonemisk analyse. Det er et bevidst valg, så barnet
@@ -70,7 +91,7 @@ hvid, og tekst, der kan læses højt.
 * Spillet erstatter ikke ordblindeundervisning; det er et supplement, der giver mange korte, strukturerede
   gentagelser og et overblik til forældre.
 
-## 4. Referencer (skal verificeres før formel citering)
+## 5. Referencer (skal verificeres før formel citering)
 
 * Arnbak, E. & Elbro, C. (2000). The effects of morphological awareness training on the reading and spelling skills of young dyslexics. *Scandinavian Journal of Educational Research*, 44(3).
 * Cepeda, N. J. m.fl. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. *Psychological Bulletin*, 132(3).
@@ -86,3 +107,8 @@ hvid, og tekst, der kan læses højt.
 * Snowling, M. J. (2000). *Dyslexia* (2. udg.). Blackwell.
 * Vellutino, F. R. m.fl. (2004). Specific reading disability (dyslexia): What have we learned in the past four decades? *Journal of Child Psychology and Psychiatry*, 45(1).
 * British Dyslexia Association. *Dyslexia Style Guide*.
+* Deci, E. L. & Ryan, R. M. (2000). The "what" and "why" of goal pursuits: Human needs and the self-determination of behavior. *Psychological Inquiry*, 11(4).
+* Deci, E. L., Koestner, R. & Ryan, R. M. (1999). A meta-analytic review of experiments examining the effects of extrinsic rewards on intrinsic motivation. *Psychological Bulletin*, 125(6).
+* Hamari, J., Koivisto, J. & Sarsa, H. (2014). Does gamification work? A literature review of empirical studies on gamification. *HICSS 2014*.
+* Sailer, M. & Homner, L. (2020). The gamification of learning: A meta-analysis. *Educational Psychology Review*, 32.
+* Zorzi, M. m.fl. (2012). Extra-large letter spacing improves reading in dyslexia. *PNAS*, 109(28).

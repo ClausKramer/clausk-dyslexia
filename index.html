@@ -10,8 +10,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
 </head>
 <body>
+  <div id="world" aria-hidden="true"></div>
+  <div id="world-labels"></div>
   <div id="app" aria-live="polite"></div>
   <div id="confetti" aria-hidden="true"></div>
   <script type="module" src="src/main.js"></script>
