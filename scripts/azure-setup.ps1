@@ -18,10 +18,10 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($Repo -notmatch '^[^/\s]+/[^/\s]+$') { throw "Repo skal angives som ejer/navn, fx ClausKramer/clausk-dyslexia (fik '$Repo')" }
 
+# Simpel funktion med $args (ikke [Parameter]), så az-flag som -o og -g ikke kolliderer med PowerShells egne parametre.
 function Invoke-Az {
-  param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
-  $out = & az @Args
-  if ($LASTEXITCODE -ne 0) { throw "az $($Args -join ' ') fejlede" }
+  $out = & az @args
+  if ($LASTEXITCODE -ne 0) { throw "az $($args -join ' ') fejlede" }
   return $out
 }
 
