@@ -109,8 +109,8 @@ infra/main.bicep              – Static Web App (+ valgfrit brugerdefineret dom
 infra/main.bicepparam         – navn, region (westeurope) og SKU
 staticwebapp.config.json      – headers og fallback for Static Web Apps
 scripts/build.js              – samler de filer, der skal online, i dist/
-scripts/azure-setup.sh        – engangsopsætning af OIDC-login for GitHub Actions
-scripts/deploy.sh             – manuelt deploy fra egen maskine
+scripts/azure-setup.ps1/.sh   – engangsopsætning af OIDC-login for GitHub Actions (PowerShell / bash)
+scripts/deploy.ps1/.sh        – manuelt deploy fra egen maskine (PowerShell / bash)
 .github/workflows/deploy.yml  – tests → Bicep → upload
 ```
 
@@ -118,10 +118,22 @@ scripts/deploy.sh             – manuelt deploy fra egen maskine
 
 Kræver [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) og at ressourcegruppen findes.
 
+Windows (PowerShell):
+
+```powershell
+az login
+.\scripts\azure-setup.ps1
+```
+
+Mac/Linux (eller Git Bash/WSL på Windows):
+
 ```bash
 az login
 ./scripts/azure-setup.sh
 ```
+
+Hvis PowerShell nægter at køre scriptet ("running scripts is disabled"), så kør først
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
 Scriptet opretter en managed identity med Contributor på ressourcegruppen og en federated credential, så GitHub
 Actions kan logge ind uden gemte nøgler (OIDC). Det udskriver tre værdier, som skal ind som secrets i repoet
@@ -133,7 +145,7 @@ Hvis `gh` CLI er logget ind, sætter scriptet dem selv.
 * **Automatisk:** push til `main` (eller kør workflowen "Deploy til Azure" manuelt under Actions). Workflowen
   kører testene, deployer Bicep (idempotent), henter Static Web App'ens deployment-token og uploader `dist/`.
   Adressen står i workflow-loggen og under Environments → production.
-* **Manuelt:** `./scripts/deploy.sh` gør det samme fra din egen maskine.
+* **Manuelt:** `.\scripts\deploy.ps1` (Windows) eller `./scripts/deploy.sh` (Mac/Linux) gør det samme fra din egen maskine.
 
 Kun Bicep uden upload:
 
