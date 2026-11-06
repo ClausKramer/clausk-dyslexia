@@ -37,8 +37,15 @@ set_fc() {
     --issuer https://token.actions.githubusercontent.com --subject "$subject" \
     --audiences api://AzureADTokenExchange -o none
 }
-set_fc "github-$BRANCH" "repo:$REPO:ref:refs/heads/$BRANCH"
-set_fc "github-env-production" "repo:$REPO:environment:production"
+# Nyere GitHub-tokens har ejer- og repo-id i subjectet: repo:EJER@ejerId/NAVN@repoId:... – vi slår id'erne op og opretter begge formater.
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then INFO=$(gh api "repos/$REPO"); else INFO=$(curl -fsSL "https://api.github.com/repos/$REPO"); fi
+FULL=$(printf '%s' "$INFO" | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));console.log(d.full_name)')
+WITH_IDS=$(printf '%s' "$INFO" | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));console.log(`${d.owner.login}@${d.owner.id}/${d.name}@${d.id}`)')
+echo "GitHub-repo: $FULL (id-format: $WITH_IDS)"
+set_fc "github-$BRANCH" "repo:$FULL:ref:refs/heads/$BRANCH"
+set_fc "github-env-production" "repo:$FULL:environment:production"
+set_fc "github-$BRANCH-id" "repo:$WITH_IDS:ref:refs/heads/$BRANCH"
+set_fc "github-env-production-id" "repo:$WITH_IDS:environment:production"
 
 echo
 echo "Sæt disse secrets i GitHub-repoet (Settings → Secrets and variables → Actions):"
