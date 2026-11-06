@@ -53,8 +53,18 @@ function Set-FederatedCredential([string]$Name, [string]$Subject) {
   if ($existing) { Invoke-Az identity federated-credential update @common | Out-Null }
   else { Invoke-Az identity federated-credential create @common | Out-Null }
 }
-Set-FederatedCredential -Name "github-$Branch" -Subject "repo:${Repo}:ref:refs/heads/$Branch"
-Set-FederatedCredential -Name 'github-env-production' -Subject "repo:${Repo}:environment:production"
+# Nyere GitHub-tokens har ejer- og repo-id i subjectet: repo:EJER@ejerId/NAVN@repoId:... – vi slår id'erne op og opretter begge formater.
+$owner, $name = $Repo.Split('/')
+$ghApi = if (Get-Command gh -ErrorAction SilentlyContinue) { gh api "repos/$Repo" 2>$null } else { $null }
+if (-not $ghApi) { $ghApi = (Invoke-WebRequest -Uri "https://api.github.com/repos/$Repo" -UseBasicParsing).Content }
+$repoInfo = $ghApi | ConvertFrom-Json
+$RepoWithIds = "$($repoInfo.owner.login)@$($repoInfo.owner.id)/$($repoInfo.name)@$($repoInfo.id)"
+Write-Host "GitHub-repo: $($repoInfo.full_name) (id-format: $RepoWithIds)"
+
+Set-FederatedCredential -Name "github-$Branch" -Subject "repo:$($repoInfo.full_name):ref:refs/heads/$Branch"
+Set-FederatedCredential -Name 'github-env-production' -Subject "repo:$($repoInfo.full_name):environment:production"
+Set-FederatedCredential -Name "github-$Branch-id" -Subject "repo:${RepoWithIds}:ref:refs/heads/$Branch"
+Set-FederatedCredential -Name 'github-env-production-id' -Subject "repo:${RepoWithIds}:environment:production"
 
 Write-Host ''
 Write-Host 'Sæt disse secrets i GitHub-repoet (Settings -> Secrets and variables -> Actions):'
