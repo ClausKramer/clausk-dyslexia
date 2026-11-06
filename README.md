@@ -135,8 +135,10 @@ az login
 Hvis PowerShell nægter at køre scriptet ("running scripts is disabled"), så kør først
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-Scriptet opretter en managed identity med Contributor på ressourcegruppen og en federated credential, så GitHub
-Actions kan logge ind uden gemte nøgler (OIDC). Det udskriver tre værdier, som skal ind som secrets i repoet
+Scriptet opretter en managed identity med Contributor på ressourcegruppen og to federated credentials (én for
+branchen `main`, én for GitHub-environmentet `production`), så GitHub Actions kan logge ind uden gemte nøgler (OIDC).
+Identiteten ligger under "Managed Identities" i Azure-portalen (ikke under "App registrations").
+Parameteren `-Repo` skal være `ejer/navn`, præcis som på GitHub (standard: `ClausKramer/clausk-dyslexia`). Det udskriver tre værdier, som skal ind som secrets i repoet
 (Settings → Secrets and variables → Actions): `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` og `AZURE_SUBSCRIPTION_ID`.
 Hvis `gh` CLI er logget ind, sætter scriptet dem selv.
 

@@ -6,9 +6,10 @@
 set -euo pipefail
 
 RG="${RG:-rg-clausk-dyslexia}"
-REPO="${REPO:-ClausKramer/ClausK-dyslexia}"
+REPO="${REPO:-ClausKramer/clausk-dyslexia}"   # ejer/navn, præcis som på GitHub
 ID_NAME="${ID_NAME:-id-clausk-dyslexia-github}"
 BRANCH="${BRANCH:-main}"
+[[ "$REPO" == */* ]] || { echo "REPO skal være ejer/navn, fx ClausKramer/clausk-dyslexia (fik '$REPO')" >&2; exit 1; }
 
 SUB=$(az account show --query id -o tsv)
 TENANT=$(az account show --query tenantId -o tsv)
@@ -25,17 +26,26 @@ az role assignment create \
   --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type ServicePrincipal \
   --role Contributor --scope "/subscriptions/$SUB/resourceGroups/$RG" -o none
 
-echo "→ Federated credential for GitHub ($REPO, branch $BRANCH)"
-az identity federated-credential create -g "$RG" --identity-name "$ID_NAME" -n "github-$BRANCH" \
-  --issuer https://token.actions.githubusercontent.com \
-  --subject "repo:$REPO:ref:refs/heads/$BRANCH" \
-  --audiences api://AzureADTokenExchange -o none
+# GitHub sender forskelligt "subject" alt efter, om jobbet bruger et environment eller ej:
+#   uden environment:  repo:EJER/NAVN:ref:refs/heads/main
+#   med environment:   repo:EJER/NAVN:environment:production   (deploy-jobbet i workflowen bruger dette)
+set_fc() {
+  local name=$1 subject=$2 op=create
+  [[ -n "$(az identity federated-credential list -g "$RG" --identity-name "$ID_NAME" --query "[?name=='$name'].name" -o tsv)" ]] && op=update
+  echo "→ Federated credential $name ($subject)"
+  az identity federated-credential $op -g "$RG" --identity-name "$ID_NAME" -n "$name" \
+    --issuer https://token.actions.githubusercontent.com --subject "$subject" \
+    --audiences api://AzureADTokenExchange -o none
+}
+set_fc "github-$BRANCH" "repo:$REPO:ref:refs/heads/$BRANCH"
+set_fc "github-env-production" "repo:$REPO:environment:production"
 
 echo
 echo "Sæt disse secrets i GitHub-repoet (Settings → Secrets and variables → Actions):"
 echo "  AZURE_CLIENT_ID=$CLIENT_ID"
 echo "  AZURE_TENANT_ID=$TENANT"
 echo "  AZURE_SUBSCRIPTION_ID=$SUB"
+echo "Bemærk: identiteten er en managed identity og ses ikke under 'App registrations' i portalen, men under 'Managed Identities'."
 
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   echo "→ gh CLI fundet – sætter secrets automatisk"
