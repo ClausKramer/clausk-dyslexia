@@ -142,6 +142,63 @@ export const WORDS = [
   { w: 'hjerte', e: '❤️', ph: ['hj', 'e', 'r', 't', 'e'], lvl: 3, cluster: 'hj', silent: true },
   { w: 'hjelm', e: '⛑️', ph: ['hj', 'e', 'l', 'm'], lvl: 3, cluster: 'hj', silent: true },
   { w: 'hvalp', e: '🐕', ph: ['hv', 'a', 'l', 'p'], lvl: 3, cluster: 'hv', silent: true },
+
+  // ---- Niveau 4: lange ord, flere stavelser, dobbeltkonsonanter, c/z/w, tre-konsonant-klynger ----
+  { w: 'tomat', e: '🍅', ph: ['t', 'o', 'm', 'a', 't'], lvl: 4 },
+  { w: 'citron', e: '🍋', ph: ['c', 'i', 't', 'r', 'o', 'n'], lvl: 4 },
+  { w: 'agurk', e: '🥒', ph: ['a', 'g', 'u', 'r', 'k'], lvl: 4 },
+  { w: 'ananas', e: '🍍', ph: ['a', 'n', 'a', 'n', 'a', 's'], lvl: 4 },
+  { w: 'gulerod', e: '🥕', ph: ['g', 'u', 'l', 'e', 'r', 'o', 'd'], lvl: 4, silent: true },
+  { w: 'giraf', e: '🦒', ph: ['g', 'i', 'r', 'a', 'f'], lvl: 4 },
+  { w: 'kamel', e: '🐫', ph: ['k', 'a', 'm', 'e', 'l'], lvl: 4 },
+  { w: 'delfin', e: '🐬', ph: ['d', 'e', 'l', 'f', 'i', 'n'], lvl: 4 },
+  { w: 'pingvin', e: '🐧', ph: ['p', 'i', 'ng', 'v', 'i', 'n'], lvl: 4 },
+  { w: 'raket', e: '🚀', ph: ['r', 'a', 'k', 'e', 't'], lvl: 4 },
+  { w: 'cykel', e: '🚲', ph: ['c', 'y', 'k', 'e', 'l'], lvl: 4 },
+  { w: 'tromme', e: '🥁', ph: ['t', 'r', 'o', 'mm', 'e'], lvl: 4, cluster: 'tr' },
+  { w: 'ballon', e: '🎈', ph: ['b', 'a', 'll', 'o', 'n'], lvl: 4 },
+  { w: 'blyant', e: '✏️', ph: ['b', 'l', 'y', 'a', 'n', 't'], lvl: 4, cluster: 'bl' },
+  { w: 'telefon', e: '📱', ph: ['t', 'e', 'l', 'e', 'f', 'o', 'n'], lvl: 4 },
+  { w: 'vulkan', e: '🌋', ph: ['v', 'u', 'l', 'k', 'a', 'n'], lvl: 4 },
+  { w: 'kartoffel', e: '🥔', ph: ['k', 'a', 'r', 't', 'o', 'ff', 'e', 'l'], lvl: 4 },
+  { w: 'edderkop', e: '🕷️', ph: ['e', 'dd', 'e', 'r', 'k', 'o', 'p'], lvl: 4, silent: true },
+  { w: 'gorilla', e: '🦍', ph: ['g', 'o', 'r', 'i', 'll', 'a'], lvl: 4 },
+  { w: 'zebra', e: '🦓', ph: ['z', 'e', 'b', 'r', 'a'], lvl: 4 },
+  { w: 'kanin', e: '🐰', ph: ['k', 'a', 'n', 'i', 'n'], lvl: 4 },
+  { w: 'violin', e: '🎻', ph: ['v', 'i', 'o', 'l', 'i', 'n'], lvl: 4 },
+  { w: 'tiger', e: '🐯', ph: ['t', 'i', 'g', 'e', 'r'], lvl: 4 },
+  { w: 'panda', e: '🐼', ph: ['p', 'a', 'n', 'd', 'a'], lvl: 4 },
+  { w: 'kiwi', e: '🥝', ph: ['k', 'i', 'w', 'i'], lvl: 4 },
+  { w: 'strand', e: '🏝️', ph: ['s', 't', 'r', 'a', 'n', 'd'], lvl: 4, cluster: 'str', silent: true },
+  { w: 'strømpe', e: '🧦', ph: ['s', 't', 'r', 'ø', 'm', 'p', 'e'], lvl: 4, cluster: 'str' },
+  { w: 'strøm', e: '⚡', ph: ['s', 't', 'r', 'ø', 'm'], lvl: 4, cluster: 'str' },
+  { w: 'skrue', e: '🔩', ph: ['s', 'k', 'r', 'u', 'e'], lvl: 4, cluster: 'skr' },
+  { w: 'skrive', e: '✍️', ph: ['s', 'k', 'r', 'i', 'v', 'e'], lvl: 4, cluster: 'skr' },
+  { w: 'skrald', e: '🗑️', ph: ['s', 'k', 'r', 'a', 'l', 'd'], lvl: 4, cluster: 'skr', silent: true },
+  { w: 'sprøjte', e: '💉', ph: ['s', 'p', 'r', 'ø', 'j', 't', 'e'], lvl: 4, cluster: 'spr' },
+  { w: 'spring', e: '🤸', ph: ['s', 'p', 'r', 'i', 'ng'], lvl: 4, cluster: 'spr' },
+
+  // ---- Niveau 5: lange ord med svær stavning (ch, gh, zz, stumme bogstaver, mange stavelser) ----
+  { w: 'chokolade', e: '🍫', ph: ['ch', 'o', 'k', 'o', 'l', 'a', 'd', 'e'], lvl: 5, silent: true },
+  { w: 'krokodille', e: '🐊', ph: ['k', 'r', 'o', 'k', 'o', 'd', 'i', 'll', 'e'], lvl: 5, cluster: 'kr' },
+  { w: 'papegøje', e: '🦜', ph: ['p', 'a', 'p', 'e', 'g', 'ø', 'j', 'e'], lvl: 5, silent: true },
+  { w: 'skildpadde', e: '🐢', ph: ['s', 'k', 'i', 'l', 'd', 'p', 'a', 'dd', 'e'], lvl: 5, cluster: 'sk', silent: true },
+  { w: 'mariehøne', e: '🐞', ph: ['m', 'a', 'r', 'i', 'e', 'h', 'ø', 'n', 'e'], lvl: 5 },
+  { w: 'blæksprutte', e: '🐙', ph: ['b', 'l', 'æ', 'k', 's', 'p', 'r', 'u', 'tt', 'e'], lvl: 5, cluster: 'bl' },
+  { w: 'flodhest', e: '🦛', ph: ['f', 'l', 'o', 'd', 'h', 'e', 's', 't'], lvl: 5, cluster: 'fl', silent: true },
+  { w: 'næsehorn', e: '🦏', ph: ['n', 'æ', 's', 'e', 'h', 'o', 'r', 'n'], lvl: 5 },
+  { w: 'helikopter', e: '🚁', ph: ['h', 'e', 'l', 'i', 'k', 'o', 'p', 't', 'e', 'r'], lvl: 5 },
+  { w: 'dinosaur', e: '🦕', ph: ['d', 'i', 'n', 'o', 's', 'a', 'u', 'r'], lvl: 5 },
+  { w: 'kænguru', e: '🦘', ph: ['k', 'æ', 'ng', 'u', 'r', 'u'], lvl: 5 },
+  { w: 'græskar', e: '🎃', ph: ['g', 'r', 'æ', 's', 'k', 'a', 'r'], lvl: 5, cluster: 'gr' },
+  { w: 'paraply', e: '☂️', ph: ['p', 'a', 'r', 'a', 'p', 'l', 'y'], lvl: 5 },
+  { w: 'pizza', e: '🍕', ph: ['p', 'i', 'zz', 'a'], lvl: 5 },
+  { w: 'egern', e: '🐿️', ph: ['e', 'g', 'e', 'r', 'n'], lvl: 5, silent: true },
+  { w: 'jordbær', e: '🍓', ph: ['j', 'o', 'r', 'd', 'b', 'æ', 'r'], lvl: 5, silent: true },
+  { w: 'hamburger', e: '🍔', ph: ['h', 'a', 'm', 'b', 'u', 'r', 'g', 'e', 'r'], lvl: 5 },
+  { w: 'spaghetti', e: '🍝', ph: ['s', 'p', 'a', 'gh', 'e', 'tt', 'i'], lvl: 5, cluster: 'sp' },
+  { w: 'kalender', e: '📅', ph: ['k', 'a', 'l', 'e', 'n', 'd', 'e', 'r'], lvl: 5 },
+  { w: 'guitar', e: '🎸', ph: ['g', 'u', 'i', 't', 'a', 'r'], lvl: 5 },
 ];
 
 const VOWEL_SET = new Set(['a', 'e', 'i', 'o', 'u', 'y', 'æ', 'ø', 'å']);
@@ -155,6 +212,25 @@ export function gapVowel(word) {
   const v = vowelOf(word);
   const i = word.ph.indexOf(v);
   return word.ph.map((t, k) => (k === i ? '_' : t)).join('');
+}
+/** Positioner (indeks i lydbrikkerne) for alle vokaler i ordet. */
+export function vowelPositions(word) {
+  return word.ph.map((t, i) => (VOWEL_SET.has(t) ? i : -1)).filter((i) => i >= 0);
+}
+/** Ordet med lydbrikken på plads i erstattet af "_". */
+export function gapAt(word, i) {
+  return word.ph.map((t, k) => (k === i ? '_' : t)).join('');
+}
+/** Slutklynge: de to sidste lydbrikker, hvis begge er enkelte konsonanter, der udtales (fx "st" i hest). */
+export function endCluster(word) {
+  if (word.silent || word.ph.length < 3) return null;
+  const [a, b] = word.ph.slice(-2);
+  if (a.length !== 1 || b.length !== 1 || VOWEL_SET.has(a) || VOWEL_SET.has(b)) return null;
+  return a + b;
+}
+/** Ordet uden slutklyngen: "hest" → "he__". */
+export function gapEnd(word) {
+  return word.w.slice(0, -2) + '__';
 }
 /** Ordet uden klyngen i starten (til klyngeopgaver): "blad" → "__ad". */
 export function gapCluster(word) {
@@ -185,6 +261,38 @@ export const COMPOUNDS = [
   { w: 'legeplads', e: '🛝', parts: ['lege', 'plads'], pe: ['🧸', '📍'] },
   { w: 'solskin', e: '🌞', parts: ['sol', 'skin'], pe: ['☀️', '✨'] },
   { w: 'natkjole', e: '👘', parts: ['nat', 'kjole'], pe: ['🌙', '👗'] },
+];
+
+// Sammensatte ord med tre dele til niveau 5 i Ordværkstedet.
+export const TRIPLES = [
+  { w: 'fodboldbane', e: '⚽🏟️', parts: ['fod', 'bold', 'bane'] },
+  { w: 'tandbørstekop', e: '🪥🥛', parts: ['tand', 'børste', 'kop'] },
+  { w: 'regnbuefarve', e: '🌈🎨', parts: ['regn', 'bue', 'farve'] },
+  { w: 'jordbærkage', e: '🍓🎂', parts: ['jord', 'bær', 'kage'] },
+  { w: 'havfruehale', e: '🧜‍♀️', parts: ['hav', 'frue', 'hale'] },
+  { w: 'postkassenøgle', e: '📮🔑', parts: ['post', 'kasse', 'nøgle'] },
+  { w: 'vandmelonsaft', e: '🍉🧃', parts: ['vand', 'melon', 'saft'] },
+  { w: 'legepladsbænk', e: '🛝🪑', parts: ['lege', 'plads', 'bænk'] },
+  { w: 'solbrillestel', e: '🕶️', parts: ['sol', 'brille', 'stel'] },
+  { w: 'brandbilstige', e: '🚒🪜', parts: ['brand', 'bil', 'stige'] },
+  { w: 'sommerfuglevinge', e: '🦋', parts: ['sommer', 'fugle', 'vinge'] },
+  { w: 'isbjørneunge', e: '🐻‍❄️', parts: ['is', 'bjørne', 'unge'] },
+];
+
+// Gradbøjning (stor – større – størst) til niveau 4 i Ordværkstedet.
+export const COMPARISONS = [
+  { q: 'Musen er lille. Myren er ___.', e: '🐭🐜', a: 'mindre', d: ['lillere', 'mindst'] },
+  { q: 'Bjørnen er stor. Elefanten er ___.', e: '🐻🐘', a: 'større', d: ['storere', 'størst'] },
+  { q: 'Min bror er høj. Far er ___.', e: '👦👨', a: 'højere', d: ['højst', 'højre'] },
+  { q: 'Bussen er hurtig. Toget er ___.', e: '🚌🚂', a: 'hurtigere', d: ['hurtigst', 'hurtiger'] },
+  { q: 'Is er kold. Sne er ___.', e: '🍦❄️', a: 'koldere', d: ['koldest', 'kolder'] },
+  { q: 'Kagen er god. Is er endnu ___.', e: '🎂🍦', a: 'bedre', d: ['godere', 'bedst'] },
+  { q: 'Bedstefar er gammel. Oldefar er ___.', e: '👴🧓', a: 'ældre', d: ['gamlere', 'ældst'] },
+  { q: 'Stenen er tung. Klippen er ___.', e: '🪨⛰️', a: 'tungere', d: ['tungest', 'tunger'] },
+  { q: 'Raketten er den ___ af dem alle.', e: '🚀', a: 'hurtigste', d: ['hurtigere', 'hurtig'] },
+  { q: 'Giraffen er det ___ dyr i zoo.', e: '🦒', a: 'højeste', d: ['højere', 'høje'] },
+  { q: 'I dag er årets ___ dag.', e: '☀️', a: 'varmeste', d: ['varmere', 'varme'] },
+  { q: 'Myren er det ___ dyr i haven.', e: '🐜', a: 'mindste', d: ['mindre', 'lilleste'] },
 ];
 
 // Bøjninger (flertal og datid) til niveau 3 i Ordværkstedet.

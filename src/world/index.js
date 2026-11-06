@@ -23,7 +23,8 @@ export function webglAvailable() {
   try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))); } catch { return false; }
 }
 
-const LEVEL_STARS = (isl) => (isl.growth > 0 ? '★'.repeat(isl.level) + '☆'.repeat(3 - isl.level) : '☆☆☆');
+const LEVEL_MAX = 5;
+const LEVEL_STARS = (isl) => { const n = isl.growth > 0 ? Math.min(LEVEL_MAX, isl.level) : 0; return '★'.repeat(n) + '☆'.repeat(LEVEL_MAX - n); };
 
 export function createWorld({ container, labels, onIslandTap = () => {}, onDragonTap = () => {}, reducedMotion = false }) {
   if (!webglAvailable()) return null;

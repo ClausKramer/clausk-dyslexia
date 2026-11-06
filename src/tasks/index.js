@@ -1,27 +1,36 @@
-// Opgavegeneratorer. Hver kategori har én generator, der ud fra profil + niveau laver et opgaveobjekt:
+// Opgavegeneratorer. Hver kategori har én generator, der ud fra profil + niveau (1-5) laver et opgaveobjekt:
 //
 // {
 //   category, type, level, instruction,
 //   speakOnStart: [part...]   part = {text} | {tiles:[...]} | {pause: ms}    (læses op når opgaven vises)
 //   repeat: [part...]         (hvad 🔊-knappen gentager; default = speakOnStart)
-//   speakIsHint: bool         (i Læsefyret "koster" oplæsning – læsning er pointen)
-//   stimulus: { emoji, text, sub }   (det store felt øverst; text kan være ord med hul eller en sætning)
+//   speakIsHint: bool         (når læsning er pointen, "koster" oplæsning: svaret tæller som "med hjælp")
+//   stimulus: { emoji, text, tiles, sub, big, question }
 //   mode: 'choice' | 'sequence'
 //   choices: [{ id, label, emoji, speak }]   answer: id            (choice)
 //   tiles:   [{ id, label, speak }]          answerSeq: [id...]    (sequence)
 //   items: [Leitner-nøgler]   confusionFor(chosenId) → "type:forventet|valgt" | null
 //   words: antal ord (til læsehastighed)
 // }
+//
+// Niveauer (overordnet):
+//   1-3: grundlæggende – korte lydrette ord → klynger og ulydrette ord
+//   4:   lange ord, flere stavelser, dobbeltkonsonanter, tre-konsonant-klynger, flere og mere lignende svarmuligheder
+//   5:   lydsletning, stavning, slutklynger, læsning uden oplæsning, svære småord, læseforståelse af korte tekster
 
-import { WORDS, COMPOUNDS, INFLECTIONS, vowelOf, gapVowel, gapCluster } from '../content/words.js';
-import { SIGHT_GROUPS, SIGHT_WORDS, SIGHT_SENTENCES, sightGroupOf } from '../content/sightWords.js';
+import { WORDS, COMPOUNDS, INFLECTIONS, TRIPLES, COMPARISONS, vowelOf, gapCluster, vowelPositions, gapAt, endCluster, gapEnd } from '../content/words.js';
+import { SIGHT_WORDS, SIGHT_SENTENCES, sightGroupOf } from '../content/sightWords.js';
 import { SUBJECTS, ACTIONS, SIMPLE_FRAMES, YESNO } from '../content/sentences.js';
-import { VOWELS, CONFUSABLE, CLUSTERS, isVowel, speechFor } from '../content/phonemes.js';
+import { DELETIONS, SPELLINGS, MINI_TEXTS, TEXTS } from '../content/advanced.js';
+import { VOWELS, CONFUSABLE, CLUSTERS, CLUSTERS3, END_CLUSTERS, HOMOPHONES, isVowel, speechFor } from '../content/phonemes.js';
 import { pickItems } from '../engine/adaptive.js';
 import { shuffle, pick, sample, defaultRng } from '../util.js';
 
 const tileParts = (tiles) => [{ tiles }];
 const text = (t) => ({ text: t });
+const NUM = ['nul', 'en', 'to', 'tre', 'fire', 'fem', 'seks', 'syv', 'otte', 'ni', 'ti', 'elleve', 'tolv'];
+const wordCount = (s) => s.split(/\s+/).filter(Boolean).length;
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function mkChoices(correct, distractors, rng, labelFn = (x) => x, extra = () => ({})) {
   const all = shuffle([correct, ...distractors], rng);
@@ -33,18 +42,67 @@ function uniqueEmoji(words) {
   return words.filter((w) => (seen.has(w.e) ? false : (seen.add(w.e), true)));
 }
 
-/** Distraktorbogstaver: på højere niveau vælges forvekslelige bogstaver. */
+/** Ordpulje pr. niveau: 1 lydrette korte, 2 ≤ niveau 2, ellers dette og forrige niveau. */
+function wordsFor(level) {
+  if (level === 1) return WORDS.filter((w) => w.lvl === 1 && !w.silent);
+  if (level === 2) return WORDS.filter((w) => w.lvl <= 2);
+  return WORDS.filter((w) => w.lvl === level || w.lvl === level - 1);
+}
+
+/** Distraktorbogstaver: på højere niveau vælges forvekslelige bogstaver. Bogstaver med samme lyd udelades altid. */
 function letterDistractors(target, n, level, rng, pool) {
-  const conf = (CONFUSABLE[target] || []).filter((l) => pool.includes(l));
-  const others = pool.filter((l) => l !== target && !conf.includes(l));
+  const same = HOMOPHONES[target] || [];
+  const usable = pool.filter((l) => l !== target && !same.includes(l));
+  const conf = (CONFUSABLE[target] || []).filter((l) => usable.includes(l));
+  const others = usable.filter((l) => !conf.includes(l));
   const picks = level >= 2 ? [...shuffle(conf, rng).slice(0, Math.min(n, level - 1)), ...shuffle(others, rng)] : shuffle(others, rng);
   return picks.slice(0, n);
 }
 
 // ---------- fonem: Lydhulen ----------
 export function genFonem({ profile, level, rng = defaultRng, now = Date.now() }) {
-  const variant = level === 1 ? 'first' : level === 2 ? pick(['last', 'rhyme'], rng) : pick(['rhyme', 'same-first', 'last'], rng);
+  const variant = level === 1 ? 'first'
+    : level === 2 ? pick(['last', 'rhyme'], rng)
+    : level === 3 ? pick(['rhyme', 'same-first', 'last'], rng)
+    : level === 4 ? pick(['count', 'count', 'same-first', 'last'], rng)
+    : pick(['delete', 'delete', 'count'], rng);
   const basePool = WORDS.filter((w) => w.lvl <= Math.min(2, level) && !w.silent && w.ph[0].length === 1);
+
+  if (variant === 'count') {
+    const pool = WORDS.filter((w) => !w.silent && w.lvl <= (level >= 5 ? 4 : 3) && w.ph.length >= (level >= 5 ? 4 : 3) && w.ph.length <= 8);
+    const [word] = pickItems(profile, pool, (w) => `lydtal:${w.ph.length}`, 1, { now, rng });
+    const n = word.ph.length;
+    const opts = [n - 1, n, n + 1, ...(level >= 5 ? [n + 2] : [])].filter((x) => x >= 1);
+    return {
+      category: 'fonem', type: 'fonem-count', level,
+      instruction: 'Hvor mange lyde er der i ordet?',
+      speakOnStart: [text('Hvor mange lyde er der i ordet'), { pause: 200 }, text(word.w)],
+      repeat: [text(word.w)],
+      stimulus: { emoji: word.e, sub: 'Sig ordet langsomt og tæl lydene' },
+      mode: 'choice',
+      choices: shuffle(opts, rng).map((x) => ({ id: String(x), label: String(x), speak: [text(NUM[x] || String(x))] })),
+      answer: String(n),
+      items: [`lydtal:${n}`],
+      confusionFor: () => null,
+    };
+  }
+
+  if (variant === 'delete') {
+    const [d] = pickItems(profile, DELETIONS, (x) => `slet:${x.from}`, 1, { now, rng });
+    const dis = sample(uniqueEmoji(WORDS.filter((w) => w.e !== d.e && w.w !== d.to && w.lvl <= 2)), 3, rng);
+    const choices = shuffle([{ id: d.to, e: d.e }, ...dis.map((w) => ({ id: w.w, e: w.e }))], rng).map((c) => ({ id: c.id, label: '', emoji: c.e, speak: [text(c.id)] }));
+    const say = [text(`Sig ${d.from} uden`), { tiles: [d.remove] }, { pause: 200 }, text('Hvad bliver det?')];
+    return {
+      category: 'fonem', type: 'fonem-delete', level,
+      instruction: `Sig "${d.from}" uden "${d.remove}". Hvad bliver det?`,
+      speakOnStart: say,
+      repeat: say,
+      stimulus: { text: d.from, big: true, sub: `uden "${d.remove}"` },
+      mode: 'choice', choices, answer: d.to,
+      items: [`slet:${d.from}`],
+      confusionFor: () => null,
+    };
+  }
 
   if (variant === 'first' || variant === 'last') {
     const idx = variant === 'first' ? 0 : -1;
@@ -90,7 +148,7 @@ export function genFonem({ profile, level, rng = defaultRng, now = Date.now() })
   const [word] = pickItems(profile, basePool, (w) => `lyd:${w.ph[0]}`, 1, { now, rng });
   const same = basePool.filter((w) => w.ph[0] === word.ph[0] && w.w !== word.w && w.e !== word.e);
   const match = pick(same.length ? same : basePool.filter((w) => w.w !== word.w), rng);
-  const dis = sample(uniqueEmoji(basePool.filter((w) => w.ph[0] !== word.ph[0] && w.e !== match.e)), 2, rng);
+  const dis = sample(uniqueEmoji(basePool.filter((w) => w.ph[0] !== word.ph[0] && w.e !== match.e && w.e !== word.e)), level >= 4 ? 3 : 2, rng);
   const choices = shuffle([match, ...dis], rng).map((w) => ({ id: w.w, label: '', emoji: w.e, speak: [text(w.w)] }));
   return {
     category: 'fonem', type: 'fonem-same-first', level,
@@ -107,15 +165,36 @@ export function genFonem({ profile, level, rng = defaultRng, now = Date.now() })
 const LETTER_POOL_L1 = ['s', 'm', 'a', 'l', 'o', 'i', 'e', 'n', 't', 'r', 'f', 'u'];
 const LETTER_POOL_L2 = [...LETTER_POOL_L1, 'b', 'd', 'p', 'k', 'g', 'h', 'v', 'j', 'y'];
 const LETTER_POOL_L3 = [...LETTER_POOL_L2, 'æ', 'ø', 'å'];
+const LETTER_POOL_L4 = [...LETTER_POOL_L3, 'c', 'z'];
+const WORD_ONLY_LETTERS = ['c', 'z']; // har samme lyd som s – kan kun øves visuelt (hvilket ord starter med c?)
 
 export function genBogstav({ profile, level, rng = defaultRng, now = Date.now() }) {
-  const pool = level === 1 ? LETTER_POOL_L1 : level === 2 ? LETTER_POOL_L2 : LETTER_POOL_L3;
+  if (level >= 5 && rng() < 0.55) {
+    const [sp] = pickItems(profile, SPELLINGS, (x) => `stavning:${x.w}`, 1, { now, rng });
+    return {
+      category: 'bogstav', type: 'bogstav-spelling', level,
+      instruction: 'Hør ordet. Hvilken stavemåde er rigtig?',
+      speakOnStart: [text('Hvordan staves'), { pause: 150 }, text(sp.w)],
+      repeat: [text(sp.w)],
+      stimulus: { emoji: sp.e },
+      mode: 'choice',
+      choices: mkChoices(sp.w, sp.d, rng),
+      answer: sp.w,
+      items: [`stavning:${sp.w}`],
+      confusionFor: (c) => (c === sp.w ? null : `ord:${sp.w}|${c}`),
+    };
+  }
+
+  const pool = level === 1 ? LETTER_POOL_L1 : level === 2 ? LETTER_POOL_L2 : level === 3 ? LETTER_POOL_L3 : LETTER_POOL_L4;
   const [target] = pickItems(profile, pool, (l) => `bogstav:${l}`, 1, { now, rng });
-  const starting = WORDS.filter((w) => w.ph[0] === target && w.lvl <= level);
-  const variant = level === 1 || !starting.length ? 'sound-to-letter' : pick(['sound-to-letter', 'letter-to-word'], rng);
+  const starting = WORDS.filter((w) => w.ph[0] === target && w.lvl <= Math.min(level, 4));
+  const wordOnly = WORD_ONLY_LETTERS.includes(target);
+  if (wordOnly && !starting.length) return genBogstav({ profile, level: 3, rng, now });
+  const variant = wordOnly ? 'letter-to-word' : level === 1 || !starting.length ? 'sound-to-letter' : pick(['sound-to-letter', 'letter-to-word'], rng);
+  const nDis = level === 1 ? 2 : level === 2 ? 3 : level === 3 ? 4 : 5;
 
   if (variant === 'sound-to-letter') {
-    const dis = letterDistractors(target, level === 1 ? 2 : level === 2 ? 3 : 4, level, rng, pool);
+    const dis = letterDistractors(target, nDis, level, rng, pool.filter((l) => !WORD_ONLY_LETTERS.includes(l)));
     return {
       category: 'bogstav', type: 'bogstav-sound', level,
       instruction: 'Hvilket bogstav siger denne lyd?',
@@ -132,16 +211,17 @@ export function genBogstav({ profile, level, rng = defaultRng, now = Date.now() 
 
   // letter-to-word: se bogstavet → hvilket ord starter med det?
   const word = pick(starting, rng);
-  const conf = CONFUSABLE[target] || [];
-  const confWords = uniqueEmoji(WORDS.filter((w) => conf.includes(w.ph[0]) && w.e !== word.e && w.lvl <= 2));
+  const conf = [...(CONFUSABLE[target] || []), ...(HOMOPHONES[target] || [])];
+  const confWords = uniqueEmoji(WORDS.filter((w) => conf.includes(w.ph[0]) && w.e !== word.e && w.lvl <= 3));
   const otherWords = uniqueEmoji(WORDS.filter((w) => w.ph[0] !== target && !conf.includes(w.ph[0]) && w.e !== word.e && w.lvl <= 2));
-  const dis = [...sample(confWords, level >= 3 ? 2 : 1, rng), ...shuffle(otherWords, rng)].slice(0, 2);
+  const nWords = level >= 4 ? 3 : 2;
+  const dis = uniqueEmoji([...sample(confWords, level >= 3 ? 2 : 1, rng), ...shuffle(otherWords, rng)]).slice(0, nWords);
   const choices = shuffle([word, ...dis], rng).map((w) => ({ id: w.w, label: w.w, emoji: w.e, speak: [text(w.w)] }));
   return {
     category: 'bogstav', type: 'bogstav-word', level,
     instruction: `Hvilket ord starter med "${target}"?`,
-    speakOnStart: [text('Hvilket ord starter med lyden'), { tiles: [target] }],
-    repeat: [{ tiles: [target] }],
+    speakOnStart: wordOnly ? [text('Hvilket ord starter med bogstavet'), text(target)] : [text('Hvilket ord starter med lyden'), { tiles: [target] }],
+    repeat: wordOnly ? [text(target)] : [{ tiles: [target] }],
     stimulus: { text: target, big: true },
     mode: 'choice', choices, answer: word.w,
     items: [`bogstav:${target}`],
@@ -151,22 +231,25 @@ export function genBogstav({ profile, level, rng = defaultRng, now = Date.now() 
 
 // ---------- syntese: Lydbroen ----------
 export function genSyntese({ profile, level, rng = defaultRng, now = Date.now() }) {
-  const pool = WORDS.filter((w) => (level === 1 ? w.lvl === 1 && !w.silent : level === 2 ? w.lvl <= 2 : w.lvl >= 2));
+  const pool = wordsFor(level);
   const [word] = pickItems(profile, pool, (w) => `ord:${w.w}`, 1, { now, rng });
   // Distraktorer: på højere niveau ord der ligner (samme rim eller samme startlyd), ellers tilfældige.
-  const similar = uniqueEmoji(WORDS.filter((w) => w.w !== word.w && w.e !== word.e && ((w.rhyme && w.rhyme === word.rhyme) || w.ph[0] === word.ph[0])));
+  const similar = uniqueEmoji(WORDS.filter((w) => w.w !== word.w && w.e !== word.e && ((w.rhyme && w.rhyme === word.rhyme) || w.ph[0] === word.ph[0] || (level >= 4 && w.ph.length === word.ph.length))));
   const others = uniqueEmoji(WORDS.filter((w) => w.w !== word.w && w.e !== word.e && w.lvl <= Math.max(2, level) && !similar.includes(w)));
-  const nDis = level === 1 ? 2 : 3;
-  const disPool = level === 1 ? shuffle(others, rng) : [...sample(similar, level - 1, rng), ...shuffle(others, rng)];
+  const nDis = level === 1 ? 2 : level <= 3 ? 3 : 4;
+  const disPool = level === 1 ? shuffle(others, rng) : [...sample(similar, Math.min(level - 1, 3), rng), ...shuffle(others, rng)];
   const dis = uniqueEmoji(disPool).slice(0, nDis);
-  const choices = shuffle([word, ...dis], rng).map((w) => ({ id: w.w, label: level >= 2 ? w.w : '', emoji: w.e, speak: [text(w.w)] }));
-  const slow = { tiles: word.ph, gap: level === 1 ? 650 : 450 };
+  // Niveau 1-2: lyt (og se ordene på niveau 2). Niveau 3+: læs selv og find billedet – ingen tekst på svarene.
+  const choices = shuffle([word, ...dis], rng).map((w) => ({ id: w.w, label: level === 2 ? w.w : '', emoji: w.e, speak: [text(w.w)] }));
+  const slow = { tiles: word.ph, gap: level === 1 ? 650 : level <= 3 ? 450 : 300 };
+  const reading = level >= 3;
   return {
     category: 'syntese', type: 'syntese', level,
-    instruction: level >= 3 ? 'Læs lydene og find ordet.' : 'Hør lydene. Hvilket ord bliver det?',
-    speakOnStart: level >= 3 ? [text('Læs lydene og find ordet')] : [text('Hvilket ord bliver det?'), { pause: 300 }, slow],
+    instruction: level >= 5 ? 'Læs ordet og find billedet.' : reading ? 'Læs lydene og find billedet.' : 'Hør lydene. Hvilket ord bliver det?',
+    speakOnStart: level >= 5 ? [text('Læs ordet og find billedet')] : reading ? [text('Læs lydene og find billedet')] : [text('Hvilket ord bliver det?'), { pause: 300 }, slow],
     repeat: [slow],
-    stimulus: level === 1 ? { emoji: '👂', sub: 'Lyt godt efter' } : { tiles: word.ph },
+    speakIsHint: reading,
+    stimulus: level === 1 ? { emoji: '👂', sub: 'Lyt godt efter' } : level >= 5 ? { text: word.w, big: true } : { tiles: word.ph },
     mode: 'choice', choices, answer: word.w,
     items: [`ord:${word.w}`],
     confusionFor: () => null,
@@ -175,21 +258,24 @@ export function genSyntese({ profile, level, rng = defaultRng, now = Date.now() 
 
 // ---------- analyse: Byggepladsen ----------
 export function genAnalyse({ profile, level, rng = defaultRng, now = Date.now() }) {
-  const pool = WORDS.filter((w) => (level === 1 ? w.lvl === 1 && !w.silent && w.ph.length >= 2 : level === 2 ? w.lvl === 2 || (w.lvl === 1 && w.ph.length === 3) : w.lvl >= 2));
+  const pool = level === 1 ? WORDS.filter((w) => w.lvl === 1 && !w.silent && w.ph.length >= 2)
+    : level === 2 ? WORDS.filter((w) => w.lvl === 2 || (w.lvl === 1 && w.ph.length === 3))
+    : wordsFor(level);
   const [word] = pickItems(profile, pool, (w) => `ord:${w.w}`, 1, { now, rng });
   const used = new Set(word.ph);
-  const nDis = level === 1 ? 2 : 3;
+  const nDis = level === 1 ? 2 : level <= 3 ? 3 : 4;
   const confusables = [...new Set(word.ph.flatMap((t) => CONFUSABLE[t] || []))].filter((t) => !used.has(t));
   const allTiles = ['a', 'e', 'i', 'o', 'u', 'y', 'æ', 'ø', 'å', 'b', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v'].filter((t) => !used.has(t));
-  const disPool = level === 1 ? shuffle(allTiles.filter((t) => !confusables.includes(t)), rng) : [...sample(confusables, level - 1, rng), ...shuffle(allTiles, rng)];
+  const disPool = level === 1 ? shuffle(allTiles.filter((t) => !confusables.includes(t)), rng) : [...sample(confusables, Math.min(level - 1, 3), rng), ...shuffle(allTiles, rng)];
   const dis = [...new Set(disPool)].slice(0, nDis);
   const tiles = shuffle([...word.ph.map((t, i) => ({ id: `${t}#${i}`, label: t, speak: tileParts([t]), tile: t })), ...dis.map((t, i) => ({ id: `${t}#d${i}`, label: t, speak: tileParts([t]), tile: t }))], rng);
+  const dictation = level >= 5; // niveau 5: kun lyd, intet billede – ren stavning efter gehør
   return {
-    category: 'analyse', type: 'analyse', level,
-    instruction: 'Byg ordet. Tryk på lydene i rækkefølge.',
-    speakOnStart: [text('Byg ordet'), { pause: 200 }, text(word.w), { pause: 300 }, text('Tryk på lydene i rækkefølge')],
+    category: 'analyse', type: dictation ? 'analyse-diktat' : 'analyse', level,
+    instruction: dictation ? 'Hør ordet og stav det.' : 'Byg ordet. Tryk på lydene i rækkefølge.',
+    speakOnStart: dictation ? [text('Hør ordet og stav det'), { pause: 250 }, text(word.w)] : [text('Byg ordet'), { pause: 200 }, text(word.w), { pause: 300 }, text('Tryk på lydene i rækkefølge')],
     repeat: [text(word.w)],
-    stimulus: { emoji: word.e },
+    stimulus: dictation ? { emoji: '👂', sub: 'Tryk på højttaleren for at høre ordet igen' } : { emoji: word.e },
     mode: 'sequence',
     tiles,
     answerSeq: word.ph.map((t, i) => `${t}#${i}`),
@@ -201,19 +287,22 @@ export function genAnalyse({ profile, level, rng = defaultRng, now = Date.now() 
 
 // ---------- vokal: Vokalvulkanen ----------
 export function genVokal({ profile, level, rng = defaultRng, now = Date.now() }) {
-  const pool = WORDS.filter((w) => vowelOf(w) && (level === 1 ? w.lvl === 1 && !w.silent : level === 2 ? w.lvl <= 2 : w.lvl >= 2));
+  const pool = wordsFor(level).filter((w) => vowelOf(w));
   const [word] = pickItems(profile, pool, (w) => `vokal:${vowelOf(w)}`, 1, { now, rng });
-  const v = vowelOf(word);
+  // Niveau 1-3: første vokal. Niveau 4-5: en tilfældig vokal i et langt ord.
+  const positions = vowelPositions(word);
+  const idx = level >= 4 ? pick(positions, rng) : positions[0];
+  const v = word.ph[idx];
   const conf = CONFUSABLE[v].filter((x) => isVowel(x));
   const others = VOWELS.filter((x) => x !== v && !conf.includes(x));
-  const n = level === 1 ? 2 : level === 2 ? 3 : 4;
-  const dis = (level === 1 ? shuffle(others, rng) : [...sample(conf, level - 1, rng), ...shuffle(others, rng)]).slice(0, n);
+  const n = level === 1 ? 2 : level === 2 ? 3 : level <= 4 ? 4 : 5;
+  const dis = (level === 1 ? shuffle(others, rng) : [...sample(conf, Math.min(level - 1, conf.length), rng), ...shuffle(others, rng)]).slice(0, n);
   return {
     category: 'vokal', type: 'vokal', level,
     instruction: 'Hvilken vokal mangler i ordet?',
     speakOnStart: [text('Hvilken vokal mangler i ordet'), { pause: 200 }, text(word.w)],
     repeat: [text(word.w)],
-    stimulus: { emoji: word.e, text: gapVowel(word), big: true },
+    stimulus: { emoji: word.e, text: gapAt(word, idx), big: true },
     mode: 'choice',
     choices: mkChoices(v, dis, rng, (x) => x, (x) => ({ speak: tileParts([x]) })),
     answer: v,
@@ -224,14 +313,57 @@ export function genVokal({ profile, level, rng = defaultRng, now = Date.now() })
 
 // ---------- klynge: Klyngekløften ----------
 export function genKlynge({ profile, level, rng = defaultRng, now = Date.now() }) {
-  const pool = WORDS.filter((w) => w.cluster && w.cluster.length === 2 && (level === 1 ? w.lvl <= 2 && !w.silent : level === 2 ? w.lvl <= 2 : true));
+  if (level === 4) {
+    // Tre konsonanter i starten: str, skr, spr
+    const pool = WORDS.filter((w) => w.cluster && w.cluster.length === 3);
+    const [word] = pickItems(profile, pool, (w) => `klynge:${w.cluster}`, 1, { now, rng });
+    const cl = word.cluster;
+    const partial = [cl[0] + cl[1], cl[0] + cl[2], cl[1] + cl[2]].filter((x) => x !== cl);
+    const dis = [...sample(partial, 2, rng), ...sample(CLUSTERS3.filter((c) => c !== cl), 1, rng)];
+    return {
+      category: 'klynge', type: 'klynge-3', level,
+      instruction: 'Hvilke lyde starter ordet?',
+      speakOnStart: [text('Hvilke lyde starter ordet'), { pause: 200 }, text(word.w)],
+      repeat: [text(word.w)],
+      stimulus: { emoji: word.e, text: '___' + word.w.slice(3), big: true },
+      mode: 'choice',
+      choices: mkChoices(cl, dis, rng, (x) => x, (x) => ({ speak: tileParts(x.split('')) })),
+      answer: cl,
+      items: [`klynge:${cl}`],
+      confusionFor: (c) => (c === cl ? null : `klynge:${cl}|${c}`),
+    };
+  }
+  if (level >= 5) {
+    // Slutklynger: he__ → st
+    // Udelad klynger med blødt d eller v/j, der udtales som vokal (klovn), så opgaven er entydig.
+    const pool = WORDS.filter((w) => { const e = endCluster(w); return e && !e.endsWith('d') && !'vj'.includes(e[0]); });
+    const [word] = pickItems(profile, pool, (w) => `slutklynge:${endCluster(w)}`, 1, { now, rng });
+    const ec = endCluster(word);
+    const swapped = ec[1] + ec[0];
+    const sharing = END_CLUSTERS.filter((c) => c !== ec && c !== swapped && (c[0] === ec[0] || c[1] === ec[1]));
+    const rest = END_CLUSTERS.filter((c) => c !== ec && c !== swapped && !sharing.includes(c));
+    const dis = [...new Set([swapped, ...sample(sharing, 2, rng), ...shuffle(rest, rng)])].filter((c) => c !== ec).slice(0, 3);
+    return {
+      category: 'klynge', type: 'klynge-slut', level,
+      instruction: 'Hvilke bogstaver mangler til sidst?',
+      speakOnStart: [text('Hvilke bogstaver mangler til sidst i ordet'), { pause: 200 }, text(word.w)],
+      repeat: [text(word.w)],
+      stimulus: { emoji: word.e, text: gapEnd(word), big: true },
+      mode: 'choice',
+      choices: mkChoices(ec, dis, rng, (x) => x, (x) => ({ speak: tileParts(x.split('')) })),
+      answer: ec,
+      items: [`slutklynge:${ec}`],
+      confusionFor: (c) => (c === ec ? null : `klynge:${ec}|${c}`),
+    };
+  }
+  const pool = WORDS.filter((w) => w.cluster && w.cluster.length === 2 && w.lvl <= 3 && (level === 1 ? w.lvl <= 2 && !w.silent : level === 2 ? w.lvl <= 2 : true));
   const [word] = pickItems(profile, pool, (w) => `klynge:${w.cluster}`, 1, { now, rng });
   const cl = word.cluster;
   const sameFirst = CLUSTERS.filter((c) => c !== cl && c[0] === cl[0]);
   const sameSecond = CLUSTERS.filter((c) => c !== cl && c[1] === cl[1] && c[0] !== cl[0]);
   const others = CLUSTERS.filter((c) => c !== cl && c[0] !== cl[0] && c[1] !== cl[1]);
   const n = level === 1 ? 2 : 3;
-  const dis = (level === 1 ? shuffle(others, rng) : [...sample([...sameFirst, ...sameSecond], level, rng), ...shuffle(others, rng)]).slice(0, n);
+  const dis = [...new Set(level === 1 ? shuffle(others, rng) : [...sample([...sameFirst, ...sameSecond], level, rng), ...shuffle(others, rng)])].slice(0, n);
   return {
     category: 'klynge', type: 'klynge', level,
     instruction: 'Hvilke lyde starter ordet?',
@@ -249,7 +381,7 @@ export function genKlynge({ profile, level, rng = defaultRng, now = Date.now() }
 // ---------- ordbilleder: Troldeskoven ----------
 export function genOrdbilleder({ profile, level, rng = defaultRng, now = Date.now() }) {
   if (level === 1) {
-    const [word] = pickItems(profile, SIGHT_WORDS, (w) => `ord:${w}`, 1, { now, rng });
+    const [word] = pickItems(profile, SIGHT_WORDS.filter((w) => sightGroupOf(w).length > 1), (w) => `ord:${w}`, 1, { now, rng });
     const group = sightGroupOf(word).filter((w) => w !== word);
     const dis = sample(group, 2, rng);
     return {
@@ -265,43 +397,82 @@ export function genOrdbilleder({ profile, level, rng = defaultRng, now = Date.no
       confusionFor: (c) => (c === word ? null : `ord:${word}|${c}`),
     };
   }
-  const pool = SIGHT_SENTENCES.filter((s) => s.lvl <= level);
+  const pool = SIGHT_SENTENCES.filter((s) => (level <= 3 ? s.lvl <= level : s.lvl === level || s.lvl === level - 1));
   const [sent] = pickItems(profile, pool, (s) => `ord:${s.a.toLowerCase()}`, 1, { now, rng });
   const spoken = sent.s.replace('___', sent.a);
-  const dis = level >= 3 ? [...sent.d, ...sample(sightGroupOf(sent.a.toLowerCase()).filter((w) => w !== sent.a.toLowerCase() && !sent.d.includes(w)), 1, rng)] : sent.d;
+  const isCap = sent.a[0] !== sent.a[0].toLowerCase();
+  const taken = new Set([sent.a, ...sent.d].map((x) => x.toLowerCase()));
+  const extra = sightGroupOf(sent.a.toLowerCase()).filter((w) => !taken.has(w.toLowerCase())).map((w) => (isCap ? cap(w) : w));
+  const dis = level >= 3 ? [...sent.d, ...sample(extra, level >= 5 ? 2 : 1, rng)] : sent.d;
+  const reading = level >= 3;
   return {
     category: 'ordbilleder', type: 'ordbilleder-gap', level,
-    instruction: level >= 3 ? 'Læs sætningen. Hvilket ord passer i hullet?' : 'Hvilket ord mangler i sætningen?',
-    speakOnStart: level >= 3 ? [text('Hvilket ord passer i hullet?')] : [text('Hvilket ord mangler?'), { pause: 300 }, text(spoken)],
+    instruction: reading ? 'Læs sætningen. Hvilket ord passer i hullet?' : 'Hvilket ord mangler i sætningen?',
+    speakOnStart: reading ? [text('Hvilket ord passer i hullet?')] : [text('Hvilket ord mangler?'), { pause: 300 }, text(spoken)],
     repeat: [text(spoken)],
-    speakIsHint: level >= 3,
+    speakIsHint: reading,
     stimulus: { emoji: sent.e, text: sent.s },
     mode: 'choice',
     choices: mkChoices(sent.a, dis, rng),
     answer: sent.a,
     items: [`ord:${sent.a.toLowerCase()}`],
     confusionFor: (c) => (c === sent.a ? null : `ord:${sent.a.toLowerCase()}|${c.toLowerCase()}`),
-    words: sent.s.split(' ').length,
+    words: wordCount(sent.s),
   };
 }
 
 // ---------- morfem: Ordværkstedet ----------
+function choiceTask({ level, type, item, keyPrefix, rng }) {
+  return {
+    category: 'morfem', type, level,
+    instruction: 'Hvilket ord passer?',
+    speakOnStart: [text('Hvilket ord passer?'), { pause: 200 }, text(item.q.replace('___', 'dut'))],
+    repeat: [text(item.q.replace('___', 'dut'))],
+    speakIsHint: level >= 4,
+    stimulus: { emoji: item.e, text: item.q },
+    mode: 'choice',
+    choices: mkChoices(item.a, item.d, rng),
+    answer: item.a,
+    items: [`${keyPrefix}:${item.a}`],
+    confusionFor: () => null,
+    words: wordCount(item.q),
+  };
+}
+
+function splitLabel(w, b1, b2) { return `${w.slice(0, b1)} + ${w.slice(b1, b2)} + ${w.slice(b2)}`; }
+
 export function genMorfem({ profile, level, rng = defaultRng, now = Date.now() }) {
+  if (level >= 5 && rng() < 0.6) {
+    // Tre dele: fodboldbane → fod + bold + bane
+    const [t] = pickItems(profile, TRIPLES, (x) => `morfem:${x.w}`, 1, { now, rng });
+    const w = t.w;
+    const b1 = t.parts[0].length, b2 = b1 + t.parts[1].length;
+    const cand = [[b1 + 1, b2], [b1, b2 - 1], [b1 - 1, b2 + 1], [b1, b2 + 1], [b1 - 1, b2]]
+      .filter(([x, y]) => x >= 1 && y > x + 0 && y < w.length && !(x === b1 && y === b2) && y - x >= 1);
+    const wrong = [];
+    for (const [x, y] of shuffle(cand, rng)) { const l = splitLabel(w, x, y); if (!wrong.includes(l)) wrong.push(l); if (wrong.length === 2) break; }
+    const correct = splitLabel(w, b1, b2);
+    return {
+      category: 'morfem', type: 'morfem-tre', level,
+      instruction: 'Hvilke tre ord gemmer sig i ordet?',
+      speakOnStart: [text('Hvilke tre ord gemmer sig i ordet'), { pause: 200 }, text(w)],
+      repeat: [text(w)],
+      stimulus: { emoji: t.e, text: w, big: true },
+      mode: 'choice',
+      choices: mkChoices(correct, wrong, rng),
+      answer: correct,
+      items: [`morfem:${w}`],
+      confusionFor: () => null,
+    };
+  }
+  if (level >= 4) {
+    if (rng() < 0.6) { const [c] = pickItems(profile, COMPARISONS, (x) => `grad:${x.a}`, 1, { now, rng }); return choiceTask({ level, type: 'morfem-grad', item: c, keyPrefix: 'grad', rng }); }
+    const [inf] = pickItems(profile, INFLECTIONS, (x) => `boejning:${x.a}`, 1, { now, rng });
+    return choiceTask({ level, type: 'morfem-boejning', item: inf, keyPrefix: 'boejning', rng });
+  }
   if (level === 3 && rng() < 0.5) {
     const [inf] = pickItems(profile, INFLECTIONS, (x) => `boejning:${x.a}`, 1, { now, rng });
-    return {
-      category: 'morfem', type: 'morfem-boejning', level,
-      instruction: 'Hvilket ord passer?',
-      speakOnStart: [text('Hvilket ord passer?'), { pause: 200 }, text(inf.q.replace('___', 'dut'))],
-      repeat: [text(inf.q.replace('___', 'dut'))],
-      stimulus: { emoji: inf.e, text: inf.q },
-      mode: 'choice',
-      choices: mkChoices(inf.a, inf.d, rng),
-      answer: inf.a,
-      items: [`boejning:${inf.a}`],
-      confusionFor: () => null,
-      words: inf.q.split(' ').length,
-    };
+    return choiceTask({ level, type: 'morfem-boejning', item: inf, keyPrefix: 'boejning', rng });
   }
   const [comp] = pickItems(profile, COMPOUNDS, (c) => `morfem:${c.w}`, 1, { now, rng });
   if (level === 1) {
@@ -340,6 +511,42 @@ export function genMorfem({ profile, level, rng = defaultRng, now = Date.now() }
 }
 
 // ---------- saetning: Læsefyret ----------
+function yesNoTask(profile, level, rng, now) {
+  const [q] = pickItems(profile, YESNO, (x) => `spm:${x.q}`, 1, { now, rng });
+  return {
+    category: 'saetning', type: 'saetning-janej', level,
+    instruction: 'Læs spørgsmålet. Ja eller nej?',
+    speakOnStart: [text('Læs spørgsmålet. Ja eller nej?')],
+    repeat: [text(q.q)],
+    speakIsHint: true,
+    stimulus: { emoji: q.e, text: q.q },
+    mode: 'choice',
+    choices: [{ id: 'ja', label: 'Ja', emoji: '👍' }, { id: 'nej', label: 'Nej', emoji: '👎' }],
+    answer: q.a ? 'ja' : 'nej',
+    items: [`spm:${q.q}`],
+    confusionFor: () => null,
+    words: wordCount(q.q),
+  };
+}
+
+function miniTextTask(profile, level, rng, now) {
+  const [m] = pickItems(profile, MINI_TEXTS, (x) => `tekst:${x.q}`, 1, { now, rng });
+  return {
+    category: 'saetning', type: 'saetning-minitekst', level,
+    instruction: 'Læs teksten og svar på spørgsmålet.',
+    speakOnStart: [text('Læs teksten og svar på spørgsmålet')],
+    repeat: [text(m.t), { pause: 300 }, text(m.q)],
+    speakIsHint: true,
+    stimulus: { text: m.t, question: m.q, passage: true },
+    mode: 'choice',
+    choices: shuffle([m.a, ...m.d], rng).map((e) => ({ id: e, label: '', emoji: e })),
+    answer: m.a,
+    items: [`tekst:${m.q}`],
+    confusionFor: () => null,
+    words: wordCount(m.t) + wordCount(m.q),
+  };
+}
+
 export function genSaetning({ profile, level, rng = defaultRng, now = Date.now() }) {
   if (level === 1) {
     const pool = uniqueEmoji(WORDS.filter((w) => w.lvl <= 2 && !w.silent));
@@ -358,26 +565,29 @@ export function genSaetning({ profile, level, rng = defaultRng, now = Date.now()
       mode: 'choice', choices, answer: word.w,
       items: [`ord:${word.w}`],
       confusionFor: () => null,
-      words: sentence.split(' ').length,
+      words: wordCount(sentence),
     };
   }
-  if (level === 3 && rng() < 0.5) {
-    const [q] = pickItems(profile, YESNO, (x) => `spm:${x.q}`, 1, { now, rng });
+  if (level >= 5) {
+    if (rng() < 0.3) return miniTextTask(profile, level, rng, now);
+    const [tx] = pickItems(profile, TEXTS, (x) => `tekst:${x.q}`, 1, { now, rng });
     return {
-      category: 'saetning', type: 'saetning-janej', level,
-      instruction: 'Læs spørgsmålet. Ja eller nej?',
-      speakOnStart: [text('Læs spørgsmålet. Ja eller nej?')],
-      repeat: [text(q.q)],
+      category: 'saetning', type: 'saetning-tekst', level,
+      instruction: 'Læs teksten og svar på spørgsmålet.',
+      speakOnStart: [text('Læs teksten og svar på spørgsmålet')],
+      repeat: [text(tx.t), { pause: 300 }, text(tx.q)],
       speakIsHint: true,
-      stimulus: { emoji: q.e, text: q.q },
+      stimulus: { text: tx.t, question: tx.q, passage: true },
       mode: 'choice',
-      choices: [{ id: 'ja', label: 'Ja', emoji: '👍' }, { id: 'nej', label: 'Nej', emoji: '👎' }],
-      answer: q.a ? 'ja' : 'nej',
-      items: [`spm:${q.q}`],
+      choices: mkChoices(tx.a, tx.d, rng),
+      answer: tx.a,
+      items: [`tekst:${tx.q}`],
       confusionFor: () => null,
-      words: q.q.split(' ').length,
+      words: wordCount(tx.t) + wordCount(tx.q),
     };
   }
+  if (level === 4) return rng() < 0.6 ? miniTextTask(profile, level, rng, now) : yesNoTask(profile, level, rng, now);
+  if (level === 3 && rng() < 0.5) return yesNoTask(profile, level, rng, now);
   const subj = pick(SUBJECTS, rng);
   const act = pick(ACTIONS, rng);
   const sentence = `${subj.t} ${level >= 3 ? act.long : act.t}.`;
@@ -401,7 +611,7 @@ export function genSaetning({ profile, level, rng = defaultRng, now = Date.now()
     answer: 'ok',
     items: [],
     confusionFor: () => null,
-    words: sentence.split(' ').length,
+    words: wordCount(sentence),
   };
 }
 

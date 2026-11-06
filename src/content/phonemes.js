@@ -21,7 +21,15 @@ export const TILE_SPEECH = {
   b: 'b', d: 'd', g: 'g', k: 'k', p: 'p', t: 't',
   ng: 'ng', kk: 'k', ll: 'lll', ss: 'sss', bb: 'b', ff: 'fff', ej: 'ej',
   hv: 'vvv', hj: 'jjj', kn: 'nnn', kj: 'kj', gn: 'ng',
+  c: 'sss', z: 'sss', w: 'vvv', ch: 'sj', gh: 'g', zz: 'ts',
+  mm: 'mmm', nn: 'nnn', dd: 'd', tt: 't', pp: 'p', rr: 'rrr', gg: 'g',
 };
+
+// Bogstaver med samme lyd – må aldrig stå som distraktor for hinanden i "hvilket bogstav siger lyden?".
+export const HOMOPHONES = { s: ['c', 'z'], c: ['s', 'z'], z: ['s', 'c'], v: ['w'], w: ['v'] };
+// Klynger med tre konsonanter (niveau 4) og slutklynger (niveau 5).
+export const CLUSTERS3 = ['str', 'skr', 'spr', 'spl'];
+export const END_CLUSTERS = ['st', 'sk', 'lk', 'lt', 'ks', 'rt', 'nt', 'ns', 'lm', 'lp', 'rk', 'gt', 'mp', 'ft', 'ts', 'kt', 'ld', 'nk'];
 
 export const CLUSTERS = ['bl', 'br', 'bj', 'dr', 'fl', 'fr', 'gl', 'gr', 'kl', 'kr', 'kn', 'pl', 'pr', 'sk', 'sl', 'sm', 'sn', 'sp', 'st', 'sv', 'tr', 'hv', 'hj'];
 

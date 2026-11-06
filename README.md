@@ -41,6 +41,23 @@ hjemmeøen, og dragen flyver rundt mellem dem. Hver ø er ét færdighedsområde
 | 🔧 Ordværkstedet | Morfologi | Sæt ord sammen, del ord op, bøj ord |
 | 🗼 Læsefyret | Sætningslæsning og forståelse | Læs sætning → find billede; ja/nej-spørgsmål |
 
+Hvert område har **fem niveauer**. Niveau 1–3 bygger grundlaget; niveau 4–5 har nye, sværere opgavetyper:
+
+| Sted | Niveau 4 | Niveau 5 |
+| --- | --- | --- |
+| 🦇 Lydhulen | Tæl lydene i ordet | Lydsletning: sig "skat" uden "s" |
+| ⛰️ Bogstavbjerget | Hele alfabetet inkl. c og z, 6 valg | Hør ordet og vælg den rigtige stavemåde (hval/wal/hvall) |
+| 🌉 Lydbroen | Læs lange ord lyd for lyd og find billedet | Læs hele ordet uden oplæsning og find billedet |
+| 🏗️ Byggepladsen | Byg lange ord med dobbeltkonsonanter | Diktat: hør ordet og stav det – intet billede |
+| 🌋 Vokalvulkanen | Vokal midt i lange ord | Endnu længere ord og 6 lignende vokaler |
+| 🪨 Klyngekløften | Tre konsonanter: str, skr, spr | Slutklynger: he__ → st |
+| 🧌 Troldeskoven | Hvorfor/hvornår/hvordan, nogle/noget, mange/meget | Svære småord: ved/vej, altid/aldrig, kun/kan |
+| 🔧 Ordværkstedet | Gradbøjning: stor – større – størst | Del ord i tre: fod + bold + bane |
+| 🗼 Læsefyret | Korte tekster med spørgsmål | Længere tekster med spørgsmål og tekstsvar |
+
+På niveau 3 og op står der ingen tekst på billedsvarene i Lydbroen, så barnet skal afkode selv. Når læsning er
+pointen, tæller brug af 🔊 som hjælp. Når en ø når niveau 5 og høj mestring, kommer der en regnbue over den.
+
 Stederne åbnes gradvist, når forudsætningerne er på plads (kan slås fra under "Voksen").
 Knappen **Spil!** lader motoren vælge en blandet mission på 8 opgaver; barnet kan også trykke på en ø.
 
@@ -75,7 +92,7 @@ trykker på det (model → gentag). 💡 Hjælp fjerner et forkert svar.
 ## Den adaptive motor (`src/engine/adaptive.js`)
 
 * **Mestring pr. område** (0–1): glidende gennemsnit af de seneste svar (rigtig = 1, med hjælp = 0,5, forkert = 0).
-* **Niveau 1–3 pr. område:** hæves efter 4 rigtige i træk med høj mestring; sænkes efter 3 forkerte i træk.
+* **Niveau 1–5 pr. område:** hæves efter 4 rigtige i træk med høj mestring; sænkes efter 3 forkerte i træk.
   Forældre kan justere manuelt.
 * **Valg af næste område:** vægtet sandsynlighed, hvor
   * svage områder vægtes kraftigt op (`1,5 · (1 − mestring)²`),
@@ -106,7 +123,7 @@ src/engine/rewards.js         – stribe, dagens mål, butik, øernes vækst
 vendor/three/                 – Three.js 0.184 (MIT), så spillet ikke afhænger af et CDN
 src/engine/adaptive.js        – mestring, niveauer, vægtning, Leitner, analyse
 src/tasks/index.js            – opgavegeneratorer (én pr. område)
-src/content/                  – ord (med lydbrikker og emoji), småord, sætninger, kategorier, lyde
+src/content/                  – ord (med lydbrikker og emoji), småord, sætninger, kategorier, lyde, avanceret indhold (advanced.js)
 src/speech.js, src/audio.js   – oplæsning og spil-lyde
 src/storage.js                – localStorage, eksport/import
 tests/                        – motor-, indholds- og generatortests

@@ -171,11 +171,12 @@ export function dragonLook(profile) {
 
 // ---------- Øernes vækst ----------
 
-/** 0 = uberørt, 1-4 = øen blomstrer mere og mere op i takt med niveau, mestring og antal opgaver. */
+/** 0 = uberørt, 1-4 = øen blomstrer mere og mere op i takt med niveau, mestring og antal opgaver.
+ *  5 = ekspert (kun på niveau 5): der kommer en regnbue over øen. */
 export function islandGrowth(skill) {
   if (!skill || !skill.attempts) return 0;
-  const points = (skill.level - 1) * 1.5 + skill.mastery * 1.5 + Math.min(skill.attempts, 40) / 20;
-  return Math.max(1, Math.min(4, Math.round(points)));
+  const points = (skill.level - 1) * 1.2 + skill.mastery * 1.5 + Math.min(skill.attempts, 40) / 20;
+  return Math.max(1, Math.min(skill.level >= 5 ? 5 : 4, Math.round(points)));
 }
 
 /** Samlet tilstand til 3D-verdenen. profile = null giver en dekorativ verden til startskærmen. */

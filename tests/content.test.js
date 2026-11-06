@@ -4,7 +4,7 @@ import { WORDS, COMPOUNDS, INFLECTIONS, vowelOf, gapVowel, gapCluster } from '..
 import { SIGHT_GROUPS, SIGHT_SENTENCES } from '../src/content/sightWords.js';
 import { YESNO, SUBJECTS, ACTIONS } from '../src/content/sentences.js';
 import { CATEGORIES, categoryById } from '../src/content/categories.js';
-import { TILE_SPEECH, CLUSTERS } from '../src/content/phonemes.js';
+import { TILE_SPEECH, CLUSTERS, CLUSTERS3 } from '../src/content/phonemes.js';
 
 test('alle ord har emoji, lydbrikker der staver ordet, og gyldigt niveau', () => {
   const seen = new Set();
@@ -13,10 +13,10 @@ test('alle ord har emoji, lydbrikker der staver ordet, og gyldigt niveau', () =>
     assert.ok(!seen.has(w.w), `${w.w} er dubleret`);
     seen.add(w.w);
     assert.equal(w.ph.join(''), w.w, `${w.w}: lydbrikker ${w.ph.join('+')} staver ikke ordet`);
-    assert.ok([1, 2, 3].includes(w.lvl), `${w.w} har ugyldigt niveau`);
+    assert.ok([1, 2, 3, 4, 5].includes(w.lvl), `${w.w} har ugyldigt niveau`);
     assert.ok(vowelOf(w), `${w.w} har ingen vokal`);
     if (w.cluster) assert.ok(w.w.startsWith(w.cluster), `${w.w} starter ikke med klyngen ${w.cluster}`);
-    if (w.cluster) assert.ok(CLUSTERS.includes(w.cluster), `${w.w}: ukendt klynge ${w.cluster}`);
+    if (w.cluster) assert.ok(CLUSTERS.includes(w.cluster) || CLUSTERS3.includes(w.cluster), `${w.w}: ukendt klynge ${w.cluster}`);
     for (const t of w.ph) assert.ok(TILE_SPEECH[t], `${w.w}: lydbrikken "${t}" mangler i TILE_SPEECH`);
   }
 });
@@ -37,6 +37,7 @@ test('rimfamilier har mindst to medlemmer, så rimopgaver kan laves', () => {
 
 test('der er nok ord til hvert niveau og til klynge/vokal-opgaver', () => {
   for (const lvl of [1, 2, 3]) assert.ok(WORDS.filter((w) => w.lvl === lvl).length >= 25, `niveau ${lvl} har for få ord`);
+  for (const lvl of [4, 5]) assert.ok(WORDS.filter((w) => w.lvl === lvl).length >= 15, `niveau ${lvl} har for få ord`);
   assert.ok(WORDS.filter((w) => w.cluster && w.cluster.length === 2 && !w.silent && w.lvl <= 2).length >= 15);
   for (const v of ['a', 'e', 'i', 'o', 'u', 'y', 'æ', 'ø', 'å']) assert.ok(WORDS.some((w) => vowelOf(w) === v && w.lvl === 1), `ingen niveau-1-ord med vokalen ${v}`);
 });
@@ -58,7 +59,7 @@ test('småord: grupper uden dubletter og sætninger med hul', () => {
   for (const s of SIGHT_SENTENCES) {
     assert.ok(s.s.includes('___'), s.s);
     assert.ok(!s.d.includes(s.a), s.s);
-    assert.ok([2, 3].includes(s.lvl));
+    assert.ok([2, 3, 4, 5].includes(s.lvl));
   }
 });
 
@@ -71,4 +72,39 @@ test('sætningsindhold', () => {
 test('kategoriernes forudsætninger peger på eksisterende kategorier', () => {
   for (const c of CATEGORIES) for (const p of c.prereq) assert.ok(categoryById(p.cat), `${c.id}: ukendt forudsætning ${p.cat}`);
   assert.equal(new Set(CATEGORIES.map((c) => c.id)).size, CATEGORIES.length);
+});
+
+import { DELETIONS, SPELLINGS, MINI_TEXTS, TEXTS } from '../src/content/advanced.js';
+import { TRIPLES, COMPARISONS, endCluster } from '../src/content/words.js';
+
+test('niveau 4-5: lydsletning giver et rigtigt ord, og delene passer', () => {
+  for (const d of DELETIONS) {
+    assert.equal(d.from.replace(d.remove, ''), d.to, `${d.from} uden ${d.remove} er ikke ${d.to}`);
+    assert.ok(d.e);
+  }
+  const emojis = DELETIONS.map((d) => d.e);
+  assert.equal(new Set(emojis).size, emojis.length, 'samme billede bruges to gange');
+});
+
+test('niveau 5: stavemåder har to forkerte varianter, der adskiller sig fra det rigtige', () => {
+  for (const s of SPELLINGS) {
+    assert.equal(s.d.length, 2);
+    assert.ok(!s.d.includes(s.w), s.w);
+    assert.equal(new Set(s.d).size, 2, s.w);
+  }
+});
+
+test('tekster: svar findes ikke blandt distraktorerne, og billedsvar er unikke', () => {
+  for (const m of MINI_TEXTS) { assert.ok(!m.d.includes(m.a), m.q); assert.equal(new Set([m.a, ...m.d]).size, 3, m.q); }
+  for (const t of TEXTS) { assert.ok(!t.d.includes(t.a), t.q); assert.ok(t.t.split('.').length >= 3, `"${t.t}" er for kort`); }
+});
+
+test('tredelte ord og gradbøjning er konsistente', () => {
+  for (const t of TRIPLES) { assert.equal(t.parts.join(''), t.w, t.w); assert.equal(t.parts.length, 3); }
+  for (const c of COMPARISONS) { assert.ok(c.q.includes('___')); assert.ok(!c.d.includes(c.a)); }
+});
+
+test('der er nok ord med slutklynger og tre-konsonant-klynger', () => {
+  assert.ok(WORDS.filter((w) => { const e = endCluster(w); return e && !e.endsWith('d'); }).length >= 10);
+  assert.ok(WORDS.filter((w) => w.cluster && w.cluster.length === 3).length >= 6);
 });

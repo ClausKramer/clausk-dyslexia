@@ -72,9 +72,9 @@ function applySettings() {
   setSoundsEnabled(s.sounds !== false);
 }
 function masteryStars(s) {
-  if (!s || s.attempts === 0) return '☆☆☆';
-  const n = Math.min(3, Math.max(1, s.level));
-  return '★'.repeat(n) + '☆'.repeat(3 - n);
+  if (!s || s.attempts === 0) return '☆'.repeat(LEVEL_MAX);
+  const n = Math.min(LEVEL_MAX, Math.max(1, s.level));
+  return '★'.repeat(n) + '☆'.repeat(LEVEL_MAX - n);
 }
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }); }
 function confetti() {
@@ -240,7 +240,8 @@ screens.mission = () => {
     const s = t.stimulus;
     stim += s.emoji ? `<div class="emoji ${s.emoji.length > 6 ? 'small' : ''}">${s.emoji}</div>` : '';
     if (s.tiles) stim += `<div class="tiles-inline">${s.tiles.map(tileHtml).join('')}</div>`;
-    if (s.text) stim += s.text.includes(' ') ? `<div class="sentence readable">${esc(s.text)}</div>` : `<div class="word readable ${s.big ? 'big' : ''}">${esc(s.text)}</div>`;
+    if (s.text) stim += s.passage ? `<div class="passage readable">${esc(s.text)}</div>` : s.text.includes(' ') ? `<div class="sentence readable">${esc(s.text)}</div>` : `<div class="word readable ${s.big ? 'big' : ''}">${esc(s.text)}</div>`;
+    if (s.question) stim += `<div class="question readable">${esc(s.question)}</div>`;
     if (s.sub) stim += `<div class="sub">${esc(s.sub)}</div>`;
   }
 
@@ -334,7 +335,7 @@ screens.parent = () => {
     ${an.recommendations.length ? an.recommendations.map((r) => `<div class="reco ${r.kind}">${esc(r.text)}</div>`).join('') : '<p class="muted">Spil nogle missioner, så kommer der anbefalinger her.</p>'}
 
     <h2>Styrker og svagheder</h2>
-    <p class="muted">Mestring er et løbende skøn (0–100 %) ud fra de seneste svar. Niveau 1–3 er sværhedsgraden; spillet justerer den selv, men du kan ændre den her. I 3D-verdenen vokser øerne med fremskridtet, og den svageste ø får en gul ring.</p>
+    <p class="muted">Mestring er et løbende skøn (0–100 %) ud fra de seneste svar. Niveau 1–5 er sværhedsgraden; spillet justerer den selv, men du kan ændre den her. Niveau 4–5 har nye opgavetyper: lange ord, lydsletning, stavning, diktat, slutklynger, svære småord og læseforståelse. I 3D-verdenen vokser øerne med fremskridtet, og den svageste ø får en gul ring.</p>
     ${an.cats.map((c) => `<div class="card cat-card" style="--c:${c.def.color}">
       <div class="title">${c.def.icon} ${esc(c.def.name)} <span class="muted" style="font-weight:400">· ${esc(c.def.skill)}</span> <span class="pill ${c.status}">${statusName[c.status]}</span>${c.unlocked ? '' : ' <span class="pill">🔒 låst</span>'}</div>
       <div class="lvl-ctl"><span class="muted">Niveau</span><button data-action="level" data-cat="${c.id}" data-d="-1" ${c.level <= 1 ? 'disabled' : ''}>−</button><strong>${c.level}</strong><button data-action="level" data-cat="${c.id}" data-d="1" ${c.level >= LEVEL_MAX ? 'disabled' : ''}>+</button></div>

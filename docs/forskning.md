@@ -50,7 +50,10 @@ hvid, og tekst, der kan læses højt.
 | Ulydrette hyppige ord skal læres som ordbilleder | **Troldeskoven** med grupper af ord, der ligner hinanden (det/de/der/den, hvad/hvor/hvem/hvis) |
 | Morfologisk opmærksomhed | **Ordværkstedet**: sammensatte ord og bøjninger |
 | Læseflyd og forståelse | **Læsefyret**: sætning → billede, ja/nej-spørgsmål; svartid logges som grov læsehastighed; oplæsning tæller som hjælp |
-| Progression fra lydrette til ulydrette ord | Ordlisten er niveaudelt: niveau 1 er korte, lydrette ord; stumme bogstaver vises som flerbogstavs-brikker (hv, hj, kn, ng) |
+| Progression fra lydrette til ulydrette ord | Ordlisten er niveaudelt i fem trin: niveau 1 er korte, lydrette ord; niveau 4–5 er lange ord med dobbeltkonsonanter, stumme bogstaver og låneord (chokolade, pizza). Stumme bogstaver vises som flerbogstavs-brikker (hv, hj, kn, ng) |
+| Avanceret fonemisk opmærksomhed | Lydtælling (niveau 4) og lydsletning (niveau 5) – manipulation af lyde er det sværeste trin og hænger tæt sammen med læsefærdighed |
+| Fra afkodning til forståelse | Niveau 5 i Lydbroen er læsning af hele ord uden lyd; Læsefyret går fra sætninger til korte tekster med spørgsmål (læseforståelse) |
+| Stavning som del af træningen | Diktat (Byggepladsen 5), stavemåde-genkendelse (Bogstavbjerget 5) og slutklynger (Klyngekløften 5) |
 | Flere opgaver dér, hvor det er svært | Vægt ∝ (1 − mestring)² pr. område; Leitner-bokse pr. bogstav/ord, så det, der fejles, kommer igen |
 | Men også øje for det, der går godt | Stærke områder hæves i niveau, holdes ved lige med spaced review og bruges som "succesopgaver" efter en svær stribe |
 | Ca. 80 % succes | Succesbalance i vægtningen; niveauet sænkes efter 3 fejl i træk, hæves efter 4 rigtige i træk |

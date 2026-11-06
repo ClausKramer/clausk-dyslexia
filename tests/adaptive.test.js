@@ -86,10 +86,11 @@ test('niveau hæves efter sikker succes og sænkes efter gentagne fejl', () => {
   assert.equal(skill(p, 'bogstav').level, 1);
 });
 
-test('niveau går ikke over 3', () => {
+test('niveau går ikke over 5', () => {
   const p = createProfile('Test');
-  answer(p, 'syntese', 1, 60);
-  assert.equal(skill(p, 'syntese').level, 3);
+  answer(p, 'syntese', 1, 120);
+  assert.equal(skill(p, 'syntese').level, 5);
+  assert.ok(p.badges.includes('level5-syntese'));
 });
 
 test('hjulpet svar (0.5) nulstiller striben uden at tælle som fejl', () => {

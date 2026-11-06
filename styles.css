@@ -309,3 +309,9 @@ body.world-on .shop-panel { margin-top: auto; }
 }
 .hud-chip { white-space: nowrap; }
 @media (max-width: 600px) { .hud-chip { min-height: 44px; padding: 4px 12px; font-size: 0.9em; } }
+
+/* Tekster med spørgsmål (Læsefyret niveau 4-5) */
+.stimulus .passage { font-size: 1.3em; font-weight: 600; line-height: 1.8; max-width: 34ch; text-align: left; }
+.stimulus .question { font-size: 1.25em; font-weight: 700; color: var(--accent); background: var(--bg-2); border-radius: 12px; padding: 6px 14px; margin-top: 4px; }
+.place .lv { letter-spacing: 0.02em; font-size: 0.8em; }
+@media (max-width: 600px) { .stimulus .passage { font-size: 1.1em; } }
