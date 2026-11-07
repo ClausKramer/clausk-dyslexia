@@ -11,7 +11,7 @@
 import { CATEGORIES, categoryById } from '../content/categories.js';
 import { weightedPick, weightedSample, clamp, uid, defaultRng } from '../util.js';
 
-export const LEVEL_MAX = 3;
+export const LEVEL_MAX = 5;
 export const MASTERY_K = 0.18;          // hvor hurtigt mestringen flytter sig pr. svar
 export const LEVEL_UP_STREAK = 4;       // rigtige i træk før niveauet hæves
 export const LEVEL_UP_MASTERY = 0.75;
@@ -215,6 +215,7 @@ export function checkBadges(profile) {
     if (!s) continue;
     if (s.attempts >= 10 && s.mastery >= 0.8) add(`master-${c.id}`);
     if (s.level >= 3) add(`level3-${c.id}`);
+    if (s.level >= 5) add(`level5-${c.id}`);
   }
   return fresh;
 }
@@ -241,6 +242,7 @@ export function badgeInfo(id) {
   const c = categoryById(cat);
   if (kind === 'master') return { icon: c?.icon || '🏅', name: `Mester i ${c?.name || cat}` };
   if (kind === 'level3') return { icon: '🔝', name: `Niveau 3 i ${c?.name || cat}` };
+  if (kind === 'level5') return { icon: '🏆', name: `Ekspert i ${c?.name || cat}` };
   return { icon: '🏅', name: id };
 }
 

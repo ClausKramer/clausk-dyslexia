@@ -47,9 +47,10 @@ function speakOne(txt, { r = rate, pitch = 1 } = {}) {
     const finish = () => { if (!done) { done = true; resolve(); } };
     u.onend = finish;
     u.onerror = finish;
-    // Sikkerhedsnet: nogle browsere sender aldrig onend.
-    setTimeout(finish, Math.max(1500, txt.length * 120 + 800));
-    synth.speak(u);
+    // Sikkerhedsnet: nogle browsere sender aldrig onend. Tiden skaleres med talehastigheden,
+    // så langsom tale ikke bliver regnet for færdig, før den er det.
+    setTimeout(finish, Math.max(2000, (txt.length * 110) / Math.max(0.4, r) + 1500));
+    try { synth.speak(u); } catch { finish(); }
   });
 }
 
@@ -62,19 +63,24 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export async function speakParts(parts) {
   if (!synth) return;
   const my = ++token;
-  synth.cancel();
-  await sleep(60);
-  for (const p of parts) {
-    if (my !== token) return;
-    if (p.pause) await sleep(p.pause);
-    else if (p.text) await speakOne(p.text);
-    else if (p.tiles) {
-      for (const t of p.tiles) {
-        if (my !== token) return;
-        await speakOne(speechFor(t), { r: Math.min(rate, 0.8) });
-        await sleep(p.gap || 350);
+  try {
+    synth.cancel();
+    await sleep(60);
+    for (const p of parts) {
+      if (my !== token) return;
+      if (p.pause) await sleep(p.pause);
+      else if (p.text) await speakOne(p.text);
+      else if (p.tiles) {
+        for (const t of p.tiles) {
+          if (my !== token) return;
+          await speakOne(speechFor(t), { r: Math.min(rate, 0.8) });
+          await sleep(p.gap || 350);
+        }
       }
     }
+  } catch (e) {
+    // Oplæsning må aldrig få spillet til at gå i stå.
+    console.warn('Oplæsning fejlede', e);
   }
 }
 

@@ -27,12 +27,12 @@ function checkTask(t, cat, level) {
   }
 }
 
-test('alle generatorer laver gyldige opgaver på alle niveauer (200 pr. kombination)', () => {
+test('alle generatorer laver gyldige opgaver på alle fem niveauer (200 pr. kombination)', () => {
   const profile = createProfile('Test');
   const rng = seededRng(42);
   for (const cat of CATEGORY_IDS) {
     assert.ok(GENERATORS[cat], `mangler generator for ${cat}`);
-    for (const level of [1, 2, 3]) {
+    for (const level of [1, 2, 3, 4, 5]) {
       for (let i = 0; i < 200; i++) checkTask(generateTask(cat, { profile, level, rng }), cat, level);
     }
   }
@@ -83,7 +83,7 @@ test('confusionFor returnerer nøgle for forkert valg og null for rigtigt', () =
 test('Læsefyret: oplæsning tæller som hjælp og ordantal registreres', () => {
   const profile = createProfile('Test');
   const rng = seededRng(8);
-  for (const level of [1, 2, 3]) {
+  for (const level of [1, 2, 3, 4, 5]) {
     const t = generateTask('saetning', { profile, level, rng });
     assert.equal(t.speakIsHint, true);
     assert.ok(t.words >= 2);

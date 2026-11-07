@@ -180,7 +180,7 @@ export function buildCategoryIsland(cat, fx) {
   group.add(landmark);
 
   // Vækst-lag 1-4
-  const growth = [new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group()];
+  const growth = [new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group()];
   const rim = (k) => { const a = r() * Math.PI * 2; const d = 2.0 + r() * 0.9; return [Math.cos(a) * d, 0, Math.sin(a) * d]; };
   for (let i = 0; i < 3; i++) growth[0].add(place(flower(['#ff6fa8', '#ffe066', '#ffffff'][i]), rim()));
   for (let i = 0; i < 2; i++) growth[1].add(place(tree(0.6 + r() * 0.3), rim()));
@@ -189,12 +189,19 @@ export function buildCategoryIsland(cat, fx) {
   for (let i = 0; i < 2; i++) growth[2].add(place(tree(0.7 + r() * 0.3, '#5fb85a'), rim()));
   const crystal = mesh(new THREE.OctahedronGeometry(0.55, 0), std(cat.color, { emissive: cat.color, emissiveIntensity: 0.6, roughness: 0.3 }), [0, 5.2, 0], [0.8, 1.3, 0.8]);
   growth[3].add(crystal);
+  // Ekspert (niveau 5): regnbue over øen
+  const rainbow = new THREE.Group();
+  ['#e5394f', '#ff8a3d', '#ffd23f', '#3fae5a', '#3d7fd9', '#8a55d6'].forEach((col, i) => {
+    rainbow.add(mesh(new THREE.TorusGeometry(3.4 - i * 0.22, 0.11, 6, 28, Math.PI), new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, flatShading: true }), [0, 0, 0]));
+  });
+  rainbow.position.set(0, 0.2, -0.6);
+  growth[4].add(rainbow);
   growth.forEach((gg) => { gg.visible = false; group.add(gg); });
 
   // Niveauflag
-  const flags = [0, 1, 2].map((i) => {
+  const flags = [0, 1, 2, 3, 4].map((i) => {
     const f = new THREE.Group();
-    const a = Math.PI * 0.75 + i * 0.35;
+    const a = Math.PI * 0.6 + i * 0.3;
     f.position.set(Math.cos(a) * 2.6, 0, Math.sin(a) * 2.6);
     f.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 4), std('#5a4636'), [0, 0.7, 0]));
     f.add(mesh(new THREE.ConeGeometry(0.28, 0.6, 3), std(cat.color), [0.25, 1.2, 0], [1, 1, 0.25], [0, 0, -Math.PI / 2]));
