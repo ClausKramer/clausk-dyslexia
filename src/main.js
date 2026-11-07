@@ -395,8 +395,9 @@ async function startMission(focus = null) {
   if (worldOn() && state.screen === 'home') {
     state.busy = true;
     document.body.classList.add('busy');
-    say(focus ? `Vi flyver til ${categoryById(focus).name}!` : 'Op og flyve!');
-    try { await world.flyTo(focus); } finally { state.busy = false; document.body.classList.remove('busy'); }
+    // Vent på både flyveturen og at dragen har talt færdig, så første opgave ikke afbryder.
+    const spoken = say(focus ? `Vi flyver til ${categoryById(focus).name}!` : 'Op og flyve!');
+    try { await Promise.all([world.flyTo(focus), Promise.resolve(spoken).catch(() => {})]); } finally { state.busy = false; document.body.classList.remove('busy'); }
   }
   const plan = planMission(p, { focus, n: MISSION_LENGTH });
   state.mission = { focus, plan, index: 0, results: [], startedAt: Date.now(), starsEarned: 0, starsBefore: p.stars, levelUps: [], newBadges: [], current: null, combo: 0, bestCombo: 0 };
@@ -444,22 +445,34 @@ function finishTask(score) {
     if (!worldOn()) confetti();
     const parts = [{ text: cur.feedback }];
     if (outcome.leveledUp) parts.push({ pause: 200 }, { text: `Du rykker op til niveau ${skill(state.profile, t.category).level}!` });
-    speakParts(parts);
     render();
-    setTimeout(nextTask, outcome.leveledUp ? 2400 : 1400);
+    advanceAfter(speakParts(parts), outcome.leveledUp ? 2400 : 1200);
   } else if (score > 0) {
     cur.feedback = 'Rigtigt – flot kæmpet!';
     cur.feedbackClass = 'ok';
     playCorrect();
-    say(cur.feedback);
     render();
-    setTimeout(nextTask, 1500);
+    advanceAfter(say(cur.feedback), 1200);
   } else {
     cur.feedback = 'Nu ved du det til næste gang!';
     cur.feedbackClass = '';
     say(cur.feedback);
     render();
   }
+}
+
+/**
+ * Gå videre til næste opgave, når rosen er læst færdig (og mindst minMs er gået).
+ * Trykker barnet selv på "Videre" imens, sker der ikke et dobbelt spring.
+ */
+function advanceAfter(spoken, minMs) {
+  const m = state.mission;
+  const idx = m.index;
+  const pause = new Promise((r) => setTimeout(r, minMs));
+  const done = Promise.resolve(spoken).catch(() => {});
+  // Loft: gå videre efter højst 12 sekunder, selv hvis browserens tale aldrig melder færdig.
+  const cap = new Promise((r) => setTimeout(r, 12000));
+  Promise.race([Promise.all([done, pause]), cap]).then(() => setTimeout(() => { if (state.mission === m && m.index === idx) nextTask(); }, 250));
 }
 
 function nextTask() {
